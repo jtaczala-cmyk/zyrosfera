@@ -246,7 +246,8 @@ function animate(){
   camera.position.x=sphere.position.x*0.18+(Math.random()-.5)*shake;
   camera.position.y=4.2+(Math.random()-.5)*shake;
   camera.position.z=sphere.position.z*0.18+10;
-  if(bh.on){camera.lookAt(bh.look);bhG.lookAt(camera.position);}else camera.lookAt(sphere.position.x,0.6,sphere.position.z);
+  if(bh.on){camera.lookAt(bh.look);bhG.lookAt(camera.position);if(hsG&&hsG.visible){hsG.position.copy(camera.position);hsG.quaternion.copy(camera.quaternion);const k=bh.shk||0;// subtle camera shake on the tunnel rig
+    camera.rotateZ((Math.random()-.5)*k*0.6);camera.rotateX((Math.random()-.5)*k*0.25);camera.rotateY((Math.random()-.5)*k*0.25);}}else camera.lookAt(sphere.position.x,0.6,sphere.position.z);
   crystals.forEach((c,i)=>{
     if(c.userData.ok)return;
     c.rotation.y+=c.userData.s*0.03;c.rotation.x+=0.012;
@@ -260,7 +261,7 @@ function animate(){
   sky.material.uniforms.t.value=T*0.001;
   composer.render();
 }
-// ===== Black hole portal (BLACK_HOLE_EFFECT.md): 6.7 s transition between sectors (pull -> hyperspace -> exit) =====
+// ===== Black hole portal (BLACK_HOLE_EFFECT.md): 7.6 s transition between sectors (pull -> hyperspace -> exit) =====
 const BHP=new THREE.Vector3(0,1.5,-4.5);
 const BH_SHADER={uniforms:{tDiffuse:{value:null},c:{value:new THREE.Vector2(.5,.5)},asp:{value:1},amt:{value:0},ca:{value:0},bright:{value:1},t:{value:0}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -290,23 +291,83 @@ function stretchGrid(k){const p=gridH.geometry.attributes.position,a=p.array;
     a[i]=x+dx*f;a[i+2]=z+dz*f;a[i+1]=-k*2.6*Math.exp(-d/4);}p.needsUpdate=true;}
 function world(v){[sky,floorMesh,gridH,ring,parts,spark,bhG].forEach(o=>o.visible=v);trail.forEach(s=>s.visible=v&&q.lvl<3);crystals.forEach(c=>{if(!c.userData.ok)c.visible=v;});
   sphere.material.visible=v;sphere.children[0].visible=v;sphere.children[1].visible=v;}
-// ---- hyperspace streaks (from hyperspace.html, PR #8): one LineSegments draw call, lazily allocated, visible only during the transition ----
-function hsCount(){return q.lvl>=2?(MOB?180:260):(MOB?320:560);}
-function initHS(){const N=560,g=new THREE.BufferGeometry(),P=new Float32Array(N*6),S=new Float32Array(N*2*4);
-  for(let i=0;i<N;i++){const a=Math.random()*6.2832,r=0.6+Math.pow(Math.random(),0.7)*7,z=Math.random(),c=Math.random();
-    for(let k=0;k<2;k++){const j=i*2+k;P[j*3]=Math.cos(a)*r;P[j*3+1]=Math.sin(a)*r;P[j*3+2]=0;S[j*4]=z;S[j*4+1]=k;S[j*4+2]=c;S[j*4+3]=0.6+Math.random()*0.8;}}
-  g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('s',new THREE.BufferAttribute(S,4));
-  const m=new THREE.ShaderMaterial({uniforms:{t:{value:0},spd:{value:0},op:{value:0},c1:{value:new THREE.Color()},c2:{value:new THREE.Color()},c3:{value:new THREE.Color()}},
-   vertexShader:'attribute vec4 s;uniform float t,spd;uniform vec3 c1,c2,c3;varying vec3 vc;varying float va;void main(){float L=60.;float z=-L+mod(s.x*L+t*s.w,L);'+
-    'float tail=0.15+spd*7.*s.w;z-=s.y*tail;vec3 p=vec3(position.xy,z);vc=s.z<.33?c1:(s.z<.66?c2:c3);va=(1.-s.y*.85)*smoothstep(-L,-L*.6,z);'+
-    'gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',
-   fragmentShader:'uniform float op;varying vec3 vc;varying float va;void main(){gl_FragColor=vec4(vc*1.6*va*op,1.);}',
+// ---- HYPERSPACE v3 (base: hyperspace_v2.html, PR #9) ----
+// Streaks: ONE draw call (single indexed quad mesh), all motion in the vertex shader (distance/stretch/speed uniforms).
+// Each streak = camera-space quad along -z, width along the screen tangent -> bright white-blue core + zone-coloured halo, tapered tail.
+// Group (streaks + tunnel + core glow) is locked to the camera; visible only during the stage.
+let hsG=null,hsT=null,hsGlow=null,rbPass=null,hsAu=null;
+const HS0=4.0,HS1=6.3,BH_END=7.6;// hyperspace 4.0-6.3 s (2.3 s), exit 6.3-7.6 s
+const HS_N=800;
+function hsCount(){const n=MOB?450:HS_N;return q.lvl>=3?n*0.4|0:q.lvl>=2?n*0.55|0:q.lvl>=1?n*0.8|0:n;}
+function initHS(){const N=HS_N,g=new THREE.BufferGeometry(),P=new Float32Array(N*4*3),A=new Float32Array(N*4*4),C=new Float32Array(N*4*2),I=new Uint16Array(N*6);
+  for(let i=0;i<N;i++){const a=Math.random()*6.2832,r=0.7+Math.pow(Math.random(),0.7)*10,z0=Math.random(),w=0.55+Math.random()*0.9,c=Math.random();
+    for(let k=0;k<4;k++){const j=i*4+k;P[j*3]=Math.cos(a)*r;P[j*3+1]=Math.sin(a)*r;P[j*3+2]=0;A[j*4]=z0;A[j*4+1]=w;A[j*4+2]=c;A[j*4+3]=a;C[j*2]=k>>1;C[j*2+1]=(k&1)*2-1;}
+    I.set([i*4,i*4+1,i*4+2,i*4+2,i*4+1,i*4+3],i*6);}
+  g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('s',new THREE.BufferAttribute(A,4));g.setAttribute('cn',new THREE.BufferAttribute(C,2));g.setIndex(new THREE.BufferAttribute(I,1));
+  const m=new THREE.ShaderMaterial({uniforms:{D:{value:0},str:{value:0},spd:{value:0},op:{value:0},zo:{value:0},wd:{value:1},c1:{value:new THREE.Color()},c2:{value:new THREE.Color()},c3:{value:new THREE.Color()},core:{value:new THREE.Color(0xe4f2ff)}},
+   vertexShader:'attribute vec4 s;attribute vec2 cn;uniform float D,str,spd,zo,wd;uniform vec3 c1,c2,c3;varying vec3 vc;varying vec2 vu;varying float va;'+
+    'void main(){float L=56.;float z=-L+mod(s.x*L+D*s.y,L)+zo;'+
+    'float len=(0.06+str*(1.5+spd*30.)*s.y);'+// speed-based length: point -> long line
+    'float zz=z-cn.x*0.+(1.-cn.x)*(-len);'+// cn.x=1 head, 0 tail
+    'vec2 tg=vec2(-sin(s.w),cos(s.w));float w=wd*(0.012+max(-zz,0.5)*0.0065*(0.7+0.5*s.y))*(1.+1.4*(1.-str));'+
+    'vec3 p=vec3(position.xy+tg*cn.y*w,zz);vc=s.z<.34?c1:(s.z<.67?c2:c3);vu=cn;'+
+    'va=smoothstep(-L,-L*.3,z)*(1.-smoothstep(-1.5,0.5,z));gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',
+   fragmentShader:'uniform float op,str;uniform vec3 core;varying vec3 vc;varying vec2 vu;varying float va;'+
+    'void main(){float v=vu.y;float tap=mix(1.,pow(vu.x,1.6),str);'+// tapered alpha toward the tail
+    'float k=exp(-v*v*20.),h=exp(-v*v*2.2)*(1.-abs(v));vec3 c=core*k*1.5+vc*h*1.5;gl_FragColor=vec4(c*tap*va*op,1.);}',
+   side:THREE.DoubleSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,depthTest:false,fog:false});
+  const hs=new THREE.Mesh(g,m);hs.frustumCulled=false;hs.renderOrder=999;
+  // tunnel: open cylinder along -z with scrolling luminous bands; brightens toward the vanishing point
+  const tm=new THREE.ShaderMaterial({uniforms:{t:{value:0},op:{value:0},c1:{value:new THREE.Color()},c2:{value:new THREE.Color()}},side:THREE.BackSide,
+   vertexShader:'varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+   fragmentShader:'uniform float t,op;uniform vec3 c1,c2;varying vec2 vU;float h(float n){return fract(sin(n)*43758.5);}'+
+    'void main(){float a=floor(vU.x*72.);float r=h(a);float b=smoothstep(.55,1.,sin(vU.y*(14.+r*10.)+t*(1.+r)+r*30.)*.5+.5);'+
+    'float d=pow(vU.y,2.2);vec3 c=mix(c1,c2,r)*b*(.35+r*.65)+vec3(.75,.88,1.)*d*.25;gl_FragColor=vec4(c*op*d*.9,1.);}',
    blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,depthTest:false,fog:false});
-  hs=new THREE.LineSegments(g,m);hs.frustumCulled=false;hs.renderOrder=999;hs.visible=false;hs.userData.d=0;scene.add(hs);}
-function whoosh(){const A=window._ac;if(!A)return;try{const t=A.currentTime,M=A.createGain();M.connect(A.destination);M.gain.setValueAtTime(0.0001,t);M.gain.exponentialRampToValueAtTime(0.5,t+0.45);M.gain.setValueAtTime(0.5,t+0.9);M.gain.exponentialRampToValueAtTime(0.0001,t+1.45);
-  const nb=A.createBuffer(1,A.sampleRate*1.5|0,A.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-  const n=A.createBufferSource();n.buffer=nb;const bp=A.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.2;bp.frequency.setValueAtTime(250,t);bp.frequency.exponentialRampToValueAtTime(3800,t+0.9);bp.frequency.exponentialRampToValueAtTime(900,t+1.45);n.connect(bp).connect(M);n.start(t);n.stop(t+1.5);
-  const o=A.createOscillator(),G=A.createGain();o.type='sawtooth';o.frequency.setValueAtTime(55,t);o.frequency.exponentialRampToValueAtTime(220,t+1.0);G.gain.value=0.06;const lp=A.createBiquadFilter();lp.frequency.value=600;o.connect(lp).connect(G).connect(M);o.start(t);o.stop(t+1.5);}catch(e){}}
+  const cyl=new THREE.CylinderGeometry(15,15,56,48,1,true);cyl.rotateX(-Math.PI/2);cyl.translate(0,0,-28);
+  hsT=new THREE.Mesh(cyl,tm);hsT.frustumCulled=false;hsT.renderOrder=998;
+  hsGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xbfe0ff,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true,opacity:0,fog:false}));hsGlow.position.z=-30;hsGlow.renderOrder=1000;
+  hsG=new THREE.Group();hsG.add(hsT,hs,hsGlow);hsG.visible=false;hsG.userData.hs=hs;scene.add(hsG);
+  rbPass=new RBPass();rbPass.enabled=false;composer.addPass(rbPass);}
+// radial (zoom) blur + chromatic aberration + flash pass. Blur is rendered at half res on mobile / low adaptive quality, then composited full-res.
+class RBPass extends THREE.Pass{constructor(){super();this.sc=(MOB||q.lvl>=2)?0.5:1;this.rt=new THREE.WebGLRenderTarget(4,4,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+  const vs='varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
+  this.bm=new THREE.ShaderMaterial({defines:{NS:MOB?10:16},uniforms:{tDiffuse:{value:null},c:{value:new THREE.Vector2(.5,.5)},str:{value:0}},vertexShader:vs,
+   fragmentShader:'uniform sampler2D tDiffuse;uniform vec2 c;uniform float str;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(12.9,78.2)))*43758.5);}'+
+    'void main(){vec2 d=vUv-c;vec3 s=vec3(0.);float tw=0.;float j=h(vUv*731.);for(int i=0;i<NS;i++){float f=(float(i)+j)/float(NS);float w=1.-f*.6;s+=texture2D(tDiffuse,c+d*(1.-str*f)).rgb*w;tw+=w;}gl_FragColor=vec4(s/tw,1.);}'});
+  this.cm=new THREE.ShaderMaterial({uniforms:{tDiffuse:{value:null},tB:{value:null},c:{value:new THREE.Vector2(.5,.5)},ca:{value:0},mixk:{value:0},flash:{value:0},glow:{value:0},gc:{value:new THREE.Color(0x9fd0ff)},asp:{value:1}},vertexShader:vs,
+   fragmentShader:'uniform sampler2D tDiffuse,tB;uniform vec2 c;uniform float ca,mixk,flash,glow,asp;uniform vec3 gc;varying vec2 vUv;'+
+    'void main(){vec2 d=vUv-c;vec2 dd=d;dd.x*=asp;float r=length(dd);float e=smoothstep(.12,.75,r);vec2 o=d*ca*.045*e;'+
+    'vec3 b=vec3(texture2D(tB,vUv+o).r,texture2D(tB,vUv).g,texture2D(tB,vUv-o).b);vec3 sh=texture2D(tDiffuse,vUv).rgb;'+
+    'vec3 col=mix(sh,b,clamp(mixk*(.35+r*1.6),0.,1.));col+=gc*glow*(exp(-r*r*14.)*1.4+exp(-r*4.)*.08);'+
+    'col*=1.-smoothstep(.45,1.1,r)*.55*mixk;col=mix(col,vec3(.9,.95,1.)*1.6,flash);gl_FragColor=vec4(col,1.);}'});
+  this.fq=new THREE.FullScreenQuad(this.bm);}
+setSize(w,h){this.w=w;this.h=h;this.rt.setSize(Math.max(2,w*this.sc|0),Math.max(2,h*this.sc|0));this.cm.uniforms.asp.value=w/h;}
+  setScale(s){if(s!==this.sc){this.sc=s;if(this.w)this.setSize(this.w,this.h);}}
+  render(r,wb,rb){this.bm.uniforms.tDiffuse.value=rb.texture;this.fq.material=this.bm;r.setRenderTarget(this.rt);this.fq.render(r);
+    this.cm.uniforms.tDiffuse.value=rb.texture;this.cm.uniforms.tB.value=this.rt.texture;this.fq.material=this.cm;r.setRenderTarget(this.renderToScreen?null:wb);if(this.clear)r.clear();this.fq.render(r);}}
+// ---- hyperspace audio (all generated with WebAudio) ----
+let _nb=null;function noiseBuf(A){if(!_nb){_nb=A.createBuffer(1,A.sampleRate*2|0,A.sampleRate);const d=_nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}return _nb;}
+function hsSnd(kind){const A=window._ac;if(!A)return;try{const t=A.currentTime,out=A.createGain();out.connect(A.destination);const st=[];hsAu=hsAu||[];
+  const osc=(ty,f0,f1,d,dst)=>{const o=A.createOscillator();o.type=ty;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+d);o.connect(dst);o.start(t);o.stop(t+d+0.05);st.push(o);return o;};
+  const nz=(d,dst)=>{const n=A.createBufferSource();n.buffer=noiseBuf(A);n.loop=true;n.connect(dst);n.start(t);n.stop(t+d);st.push(n);return n;};
+  if(kind==='charge'){// rising charge-up whine (0.85 s): detuned saws through a sweeping resonant lowpass + tremolo
+    out.gain.setValueAtTime(0.0001,t);out.gain.exponentialRampToValueAtTime(0.22,t+0.8);out.gain.exponentialRampToValueAtTime(0.0001,t+0.9);
+    const lp=A.createBiquadFilter();lp.type='lowpass';lp.Q.value=9;lp.frequency.setValueAtTime(400,t);lp.frequency.exponentialRampToValueAtTime(7000,t+0.85);lp.connect(out);
+    osc('sawtooth',180,2600,0.88,lp);osc('sawtooth',182,2640,0.88,lp);const s=osc('sine',360,5200,0.88,out);
+    const tr=A.createOscillator(),tg=A.createGain();tr.frequency.setValueAtTime(8,t);tr.frequency.exponentialRampToValueAtTime(40,t+0.85);tg.gain.value=0.08;tr.connect(tg).connect(out.gain);tr.start(t);tr.stop(t+0.9);st.push(tr);}
+  else if(kind==='thump'){// deep thump at the jump: pitched-down sine kick + click
+    out.gain.setValueAtTime(0.9,t);out.gain.exponentialRampToValueAtTime(0.0001,t+0.7);osc('sine',140,32,0.6,out);
+    const cg=A.createGain();cg.gain.setValueAtTime(0.5,t);cg.gain.exponentialRampToValueAtTime(0.0001,t+0.05);const hp=A.createBiquadFilter();hp.type='highpass';hp.frequency.value=1500;hp.connect(cg).connect(out);nz(0.06,hp);}
+  else if(kind==='roar'){// rushing roar (slam -> drop): noise through a rising bandpass + sub rumble
+    out.gain.setValueAtTime(0.0001,t);out.gain.exponentialRampToValueAtTime(0.55,t+0.18);out.gain.setValueAtTime(0.55,t+0.85);out.gain.exponentialRampToValueAtTime(0.0001,t+1.12);
+    const bp=A.createBiquadFilter();bp.type='bandpass';bp.Q.value=0.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(2600,t+1.0);bp.connect(out);nz(1.15,bp);
+    const lp=A.createBiquadFilter();lp.frequency.value=180;const sg=A.createGain();sg.gain.value=0.35;lp.connect(sg).connect(out);osc('sawtooth',38,62,1.1,lp);osc('sawtooth',38.4,61,1.1,lp);}
+  else if(kind==='boom'){// release boom on drop-out: sub drop + filtered noise burst
+    out.gain.setValueAtTime(1.0,t);out.gain.exponentialRampToValueAtTime(0.0001,t+1.6);osc('sine',90,24,1.4,out);
+    const lp=A.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(3000,t);lp.frequency.exponentialRampToValueAtTime(120,t+1.2);const ng=A.createGain();ng.gain.value=0.6;lp.connect(ng).connect(out);nz(1.3,lp);}
+  hsAu.push({out,st});}catch(e){}}
+function hsHush(){const A=window._ac;if(!A||!hsAu)return;const t=A.currentTime;hsAu.forEach(a=>{try{a.out.gain.cancelScheduledValues(t);a.out.gain.setValueAtTime(Math.max(a.out.gain.value,0.0002),t);a.out.gain.exponentialRampToValueAtTime(0.0001,t+0.06);a.st.forEach(o=>{try{o.stop(t+0.1)}catch(e){}});}catch(e){}});hsAu=[];}
 // ---- audio ----
 function bhAudio(){const A=window._ac;if(!A)return null;try{A.resume&&A.resume();const t=A.currentTime,M=A.createGain();M.gain.setValueAtTime(0.0001,t);M.gain.exponentialRampToValueAtTime(0.9,t+0.8);M.connect(A.destination);
   const nodes=[];const lp=A.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(120,t);lp.frequency.exponentialRampToValueAtTime(420,t+3.8);lp.connect(M);
@@ -334,7 +395,7 @@ function bhExitAudio(z){const A=window._ac;if(!A)return;try{const t=A.currentTim
 function startBH(){if(bh.on)return;const from=zone,to=zone+1;
   bh={on:true,t0:performance.now(),from,to,ph:0,spin:1,look:new THREE.Vector3(sphere.position.x,0.6,sphere.position.z),start:sphere.position.clone(),au:bhAudio(),slow:0,frames:0};
   bhG.visible=true;bhG.scale.setScalar(0.001);bhPass.enabled=true;bhPass.uniforms.asp.value=innerWidth/innerHeight;}
-function skipBH(){const e=(performance.now()-bh.t0)/1000;if(e>1&&e<3.8)bh.t0=performance.now()-3800;}// skippable: jump to the silent beat + exit
+function skipBH(){const e=(performance.now()-bh.t0)/1000;if(e>1&&e<3.8)bh.t0=performance.now()-3800;else if(e>HS0&&e<HS0+1.9){hsHush();bh.t0=performance.now()-(HS0+1.9)*1000;}}// tap: black hole -> silent beat; hyperspace -> drop-out
 const _v=new THREE.Vector3();
 function updateBH(now,dt){const e=(now-bh.t0)/1000,U=bhPass.uniforms,A=ZONES[bh.from],B=ZONES[bh.to];U.t.value=e;
   // adaptive: if FPS drops during the sequence, halve bloom resolution (only during the sequence)
@@ -349,22 +410,38 @@ function updateBH(now,dt){const e=(now-bh.t0)/1000,U=bhPass.uniforms,A=ZONES[bh.
     bloom.strength=2.8;gk=0.8+0.2*q;amt=0.6+0.4*q;ca=q;fov=70+4*q;br=1+0.16*Math.sin(e*Math.PI*2*2.5);palette(A,B,sm(q));bh.look.copy(BHP);}
   else if(e<4.0){if(bh.ph<3){bh.ph=3;world(false);bhSilence();}// near-silence, almost black, only filaments
     bloom.strength=0.35;gk=1;amt=0.7;ca=0.4;fov=74;br=1;bh.spin=10;}
-  else if(e<5.4){const h=(e-4.0)/1.4;// HYPERSPACE: streaks burst toward camera in the next zone's palette
-    if(bh.ph<3.5){bh.ph=3.5;if(!hs)initHS();hs.geometry.setDrawRange(0,hsCount()*2);const M=hs.material.uniforms;M.c1.value.setHex(B.cr[0]);M.c2.value.setHex(B.cr[1]);M.c3.value.setHex(B.top);hs.userData.d=0;hs.visible=true;whoosh();}
-    const acc=sm(cl(h/0.4)),M=hs.material.uniforms;hs.userData.d+=dt*0.016*(4+acc*140);M.t.value=hs.userData.d;M.spd.value=acc;M.op.value=cl(h/0.1)*(h>0.85?1-(h-0.85)/0.15*0.7:1);
-    hs.position.copy(camera.position);hs.quaternion.copy(camera.quaternion);
-    bloom.strength=lerp(0.6,1.8,acc);gk=0;amt=0.15*(1-acc);ca=0.3+0.5*acc;fov=lerp(74,104,sm(cl(h/0.6)));br=h>0.88?1+(h-0.88)*14:1;bh.spin=10;}
-  else if(e<6.7){if(bh.ph<4){bh.ph=4;if(hs)hs.visible=false;palette(A,B,1);setZone(bh.to);world(true);bhExitAudio(bh.to);tx=0;tz=1.5;bh.start=BHP.clone();}
-    const r=(e-5.4)/1.3,rs=sm(r);appear=rs;sphere.position.lerpVectors(bh.start,_v.set(0,0.9,1.5),rs);bh.spin=lerp(10,1,r);const fs=lerp(4.4,1,rs);fil.scale.set(fs,lerp(1.6,1,rs),fs);
+  else if(e<HS1){const h=e-HS0;// HYPERSPACE 2.3 s: charge 0-0.7 | lurch/pullback 0.7-0.85 | slam+cruise 0.85-1.9 | drop-out 1.9-2.3
+    if(bh.ph<3.5){bh.ph=3.5;if(!hsG)initHS();const S=hsG.userData.hs,M=S.material.uniforms,wb=new THREE.Color(0xa8d4ff);
+      S.geometry.setDrawRange(0,hsCount()*6);M.c1.value.setHex(B.cr[0]).lerp(wb,.15);M.c2.value.setHex(B.cr[1]).lerp(wb,.15);M.c3.value.setHex(B.top).lerp(wb,.2);
+      hsT.material.uniforms.c1.value.setHex(B.cr[1]).lerp(wb,.3);hsT.material.uniforms.c2.value.setHex(B.top).lerp(wb,.3);hsGlow.material.color.setHex(0xd8ecff).lerp(new THREE.Color(B.ring),.3);
+      rbPass.setScale((MOB||q.lvl>=2)?0.5:1);rbPass.cm.uniforms.gc.value.setHex(0xd8ecff).lerp(new THREE.Color(B.ring),.25);rbPass.enabled=true;hsG.visible=true;sphere.visible=false;bh.D=0;bh.vel=0;bh.shk=0;bh.snd=0;hsAu=[];hsSnd('charge');}
+    const S=hsG.userData.hs,M=S.material.uniforms,R=rbPass.cm.uniforms;let vel,str,zo=0,blur,mixk,ca,gl,tun,flash=0,f,shk;
+    if(h<0.7){const p=h/0.7;vel=lerp(0.6,3.5,p*p);str=0.04*p;blur=0.05*p;mixk=0.4*p;ca=0.25*p;gl=lerp(0.1,0.7,p*p);tun=0.05*p;f=lerp(74,80,sm(p));shk=0.004+0.02*p*p;M.op.value=cl(h/0.15);}
+    else if(h<0.85){const p=(h-0.7)/0.15,b=Math.sin(p*Math.PI*0.5);// the lurch: everything recoils, short pullback
+      vel=-26*(1-p*0.6);str=0.12;zo=-4.5*b;blur=0.12;mixk=0.6;ca=0.6;gl=0.7-0.4*b;tun=0.08;f=lerp(80,64,b);shk=0.07;}
+    else if(h<1.9){const p=(h-0.85)/1.05,a=cl(p/0.22),ae=1-Math.pow(1-a,3);// SLAM forward then roaring cruise
+      if(bh.snd<1){bh.snd=1;hsSnd('thump');hsSnd('roar');}
+      vel=lerp(10,190,ae)+30*p;str=ae;zo=-4.5*(1-cl(p/0.08));blur=lerp(0.55,0.32,cl((p-0.1)/0.4));mixk=1;ca=lerp(1.4,0.9,p);gl=lerp(0.9,1.5,p);tun=ae*(0.7+0.3*p);
+      f=lerp(64,98,1-Math.pow(1-cl(p/0.25),3));shk=lerp(0.1,0.025,cl(p/0.3));}
+    else{const p=(h-1.9)/0.4,sn=Math.pow(cl(p/0.3),0.5);// DROP OUT: streaks snap back to points, flash, reveal
+      if(bh.snd<2){bh.snd=2;hsSnd('boom');}
+      vel=lerp(220,0.5,sn);str=1-sn;blur=0.55*(1-sn)+0.15;mixk=1-p*0.5;ca=lerp(1.2,0.3,p);gl=lerp(1.5,2.4,p);tun=1-sn;f=lerp(98,70,sn);shk=0.06*(1-p);flash=Math.pow(p,3.5);M.op.value=1-p*0.6;}
+    bh.D+=vel*dt*0.0167;M.D.value=bh.D;M.str.value=str;M.spd.value=cl(Math.abs(vel)/220);M.zo.value=zo;M.wd.value=MOB?1.25:1;
+    hsT.material.uniforms.t.value=bh.D*0.35;hsT.material.uniforms.op.value=tun;hsGlow.material.opacity=cl(gl*0.28);hsGlow.scale.setScalar(2.5+gl*4+tun*3);
+    rbPass.bm.uniforms.str.value=blur;R.mixk.value=mixk;R.ca.value=ca;R.glow.value=gl*0.14;R.flash.value=flash;bh.shk=shk;
+    bloom.strength=lerp(0.7,1.15,cl(str));gk=0;amt=0;ca=0;fov=f;br=1;bh.spin=10;}
+  else if(e<BH_END){if(bh.ph<4){bh.ph=4;hsOff();palette(A,B,1);setZone(bh.to);world(true);bhExitAudio(bh.to);tx=0;tz=1.5;bh.start=BHP.clone();}
+    const r=(e-HS1)/1.3,rs=sm(r);appear=rs;sphere.position.lerpVectors(bh.start,_v.set(0,0.9,1.5),rs);bh.spin=lerp(10,1,r);const fs=lerp(4.4,1,rs);fil.scale.set(fs,lerp(1.6,1,rs),fs);
     sphere.material.opacity=1*rs;sphere.children[1].material.opacity=0.25*rs;sphere.children[0].scale.setScalar(0.1+0.9*rs);
-    bloom.strength=lerp(0.35,0.9,rs);gk=1-rs;amt=0.7*(1-rs);ca=0.4*(1-rs);br=lerp(2.2,1,sm(cl(r*3)))*Math.max(Math.pow(r,0.4),0.35);fov=lerp(104,56,rs);bs=1-rs;bh.look.lerp(_v.set(sphere.position.x,0.6,sphere.position.z),0.15);}
-  else{if(bh.ph<4){palette(A,B,1);setZone(bh.to);world(true);tx=0;tz=1.5;}endBH();return;}// frame hitch safety: never skip the zone switch
+    bloom.strength=lerp(0.35,0.9,rs);gk=1-rs;amt=0.7*(1-rs);ca=0.4*(1-rs);br=lerp(3.2,1,sm(cl(r*2.5)))*Math.max(Math.pow(r,0.4),0.35);fov=lerp(70,56,rs);bs=1-rs;bh.look.lerp(_v.set(sphere.position.x,0.6,sphere.position.z),0.15);}
+  else{hsOff();if(bh.ph<4){palette(A,B,1);setZone(bh.to);world(true);tx=0;tz=1.5;}endBH();return;}// frame hitch safety: never skip the zone switch
   bhG.scale.setScalar(Math.max(bs,0.001));bhG.children[0].rotation.z+=0.02*dt;bhG.children[1].material.opacity=0.85+0.15*Math.sin(e*20);
   bhG.userData.arcs.forEach((m,i)=>{m.rotation.z+=m.userData.sp*0.03*dt*(1+amt*3);const c=i<3?A.cr[i]:0x9ff8ff;m.material.color.setHex(c);m.material.opacity=cl((e-0.6)/1.2)*0.9;m.scale.set(1+amt*0.35,1-amt*0.12,1);});
   trail.forEach((s,i)=>s.position.lerp(BHP,0.04*amt));
   stretchGrid(gk);if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
   _v.copy(BHP).project(camera);U.c.value.set(_v.x*.5+.5,_v.y*.5+.5);U.amt.value=amt;U.ca.value=ca;U.bright.value=br;}
-function endBH(){bh.on=false;if(hs)hs.visible=false;bhPass.enabled=false;bhG.visible=false;appear=1;fil.scale.set(1,1,1);sphere.material.opacity=1;sphere.children[1].material.opacity=0.25;sphere.children[0].scale.setScalar(1);
+function hsOff(){if(hsG)hsG.visible=false;sphere.visible=true;if(rbPass)rbPass.enabled=false;bh.shk=0;}
+function endBH(){bh.on=false;hsOff();bhPass.enabled=false;bhG.visible=false;appear=1;fil.scale.set(1,1,1);sphere.material.opacity=1;sphere.children[1].material.opacity=0.25;sphere.children[0].scale.setScalar(1);
   stretchGrid(0);camera.fov=56;camera.updateProjectionMatrix();bloom.strength=BLOOM_BASE;if(bhLow){bhLow=false;const k=bk();bloom.setSize(innerWidth/k|0,innerHeight/k|0);}mission(zone);}
 </script>
 </body>

@@ -61,3 +61,16 @@ Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
 - Streaks: one `THREE.LineSegments` + ShaderMaterial (additive, GPU-animated, no per-frame buffer upload), lazily created on first transition, visible only in the hyperspace phase. Count 560 desktop / 320 mobile, 260/180 when adaptive quality lvl≥2.
 - Tap-to-skip unchanged (jumps to 3.8 s, hyperspace still plays). Fix: zone switch is now guaranteed even if a frame hitch jumps past the exit phase.
 - Headless 390×844 check: no console errors (only local 404 for GoatCounter count.js). Shots: shots/hs_*.png.
+
+## Hyperspace v3 — kinowy skok (15.10.2026, Grok)
+- PR #9 (grok/hyperspace-v2, samo demo `hyperspace_v2.html`) scalony; v2 jako baza dla etapu w grze.
+- Przejście strefy: czarna dziura 0–4.0 s → **nadświetlna 4.0–6.3 s (2.3 s)** → wyjście 6.3–7.6 s (razem 7.6 s, wcześniej 6.7 s).
+  - 4.0–4.7 ładowanie: smugi jako punkty, narastający świst, rośnie centralna poświata, lekki shake;
+  - 4.7–4.85 szarpnięcie: wszystko cofa się (krótki pullback, FOV 80→64);
+  - 4.85–5.9 SLAM: gwałtowne przyspieszenie, punkty rozciągają się w długie linie (długość zależna od prędkości), radial/zoom blur, aberracja chromatyczna na brzegach, tunel świetlny, FOV do 98, głuche uderzenie + ryk;
+  - 5.9–6.3 wyjście z nadświetlnej: smugi „zatrzaskują się” z powrotem w punkty, boom, biały błysk → odsłonięcie nowej strefy.
+- Smugi: jeden draw call (jeden indeksowany mesh quadów), ruch w vertex shaderze; jasny biało‑niebieski rdzeń + kolorowe halo z palety strefy, zanikający ogon; szerokość ~stała w px (bez znikania sub‑pikselowego). 800 desktop / 450 mobile, ×0.8/0.55/0.4 przy adaptacyjnej jakości 1/2/3.
+- Radial blur + CA + błysk: osobny pass tylko podczas etapu; blur w 1/2 rozdz. na mobile / przy jakości ≥2.
+- Dźwięk (WebAudio, generowany): świst ładowania, thump przy skoku, ryk, boom przy wyjściu.
+- Tap‑to‑skip: w czarnej dziurze jak wcześniej; w nadświetlnej skacze do wyjścia (5.9 s).
+- Test headless 390×844 (zamrożony zegar): brak błędów gry, strefa 2 po przejściu; desktop 1280×800: 800 smug, skip OK. Zrzuty `shots/hs2_*.png`, wideo `shots/hs2_transition.mp4` (2.5–8.0 s przejścia).
