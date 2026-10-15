@@ -48,3 +48,9 @@ Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
 - Bez dodatkowych systemów cząsteczek; ShaderPass włączany tylko na czas przejścia; jeśli FPS spadnie w trakcie, bloom tymczasowo w 1/4 rozdz. Tap w trakcie (1–3,8 s) = pomiń do wyjścia.
 - Uwaga: GDD w PR #2 zmienia nazwę na „Aetheris/Lumen” — w grze nazwa/URL ŻyroSfera bez zmian (decyzja Jacka).
 - Zrzuty: `shots/live_bh_*.png`.
+
+## 2026-10-15 — Mobile optimizations (MOBILE_OPTIMIZATIONS.md, PR #6)
+- Implemented: mobile profile (`MOB` = dpr>2 or coarse pointer): bloom at half-res by default on dpr>2; trail 16 sprites (was 26); sparkles pool 150 (was 300); player sphere 32×24 segments (was 48×32).
+- Adaptive quality: new level 3 (after 1.35 → 1.0+half bloom) hides the trail and limits ambient motes to 200.
+- Already present / skipped: pixel ratio cap 1.75, levels 1–2, black hole quarter-res bloom fallback, flat-shaded crystals; lights already at 2 PointLights (no per-crystal lights exist). Skipped "full-res bloom during short effects" (reallocating render targets mid-effect causes stutter on iOS).
+- Verified headless 390×844 @3x: no game console errors (only 404 for /count.js + favicon on the local server, both exist only on stop60.no root).
