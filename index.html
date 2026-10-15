@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="robots" content="noindex,nofollow">
-<title>ŻyroSfera</title>
+<title>Aetheris</title>
 <style>
   body{margin:0;background:#000;overflow:hidden;touch-action:none;font-family:system-ui,sans-serif;color:#adf}
   #hud{position:absolute;top:14px;left:14px;background:rgba(0,10,25,0.5);padding:10px 14px;border-radius:8px;font-size:14px;z-index:10;pointer-events:none;backdrop-filter:blur(8px);border:1px solid rgba(0,200,255,0.3)}
@@ -24,7 +24,7 @@
 <div id="toast"></div>
 <div id="win"><h1 style="color:#0ff;text-shadow:0 0 30px #0af">Wszystkie fragmenty!</h1><p id="wt"></p><button onclick="location.reload()">Jeszcze raz</button></div>
 <div id="overlay">
-  <h1>ŻyroSfera</h1>
+  <h1>Aetheris</h1>
   <p style="opacity:.85">Przeciągaj palcem</p>
   <button id="go">Start</button>
 </div>
@@ -61,12 +61,12 @@ function init(){
   camera.position.set(0,3.8,10);
   renderer=new THREE.WebGLRenderer({antialias:true});
   renderer.setSize(innerWidth,innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2.5));
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.35;
   document.body.appendChild(renderer.domElement);
   const rp=new THREE.RenderPass(scene,camera);
-  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth/2,innerHeight/2),2.0,0.6,0.35);
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),2.2,0.65,0.3);
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(rp);composer.addPass(bloom);
   scene.add(new THREE.AmbientLight(0x061428,0.25));
@@ -140,7 +140,7 @@ function animate(){
     c.position.y=0.8+Math.sin(Date.now()*0.0025+c.position.x)*0.2;
     if(sphere.position.distanceTo(c.position)<1.2){
       c.userData.ok=true;c.visible=false;c.children[0].intensity=0;score++;sc.textContent=score;
-      bloom.strength=3.2;setTimeout(()=>bloom.strength=2.1,220);
+      bloom.strength=3.4;setTimeout(()=>bloom.strength=2.2,220);
       pickup(c.position);
     }
   });
