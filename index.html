@@ -107,9 +107,12 @@ let SM,HALO,HL,fx=[],fil,zone=0,sky,floorM,gridH,ring,L1,L2,trail=[],spark,spark
 let floorMesh,bh={on:false},bhG,bhPass,gridBase,appear=1,bhLow=false;
 let scene,camera,renderer,composer,bloom,sphere,crystals=[],parts,score=0,total=0,tx=0,tz=0,shake=0;
 const PR_MAX=1.75,BLOOM_BASE=0.85;let q={lvl:0,fr:0,acc:0};
+// mobile profile (MOBILE_OPTIMIZATIONS.md): half-res bloom on dpr>2, shorter trail, fewer sparkles, lighter sphere
+const MOB=(window.devicePixelRatio||1)>2||matchMedia('(pointer:coarse)').matches;const HI_DPR=(window.devicePixelRatio||1)>2;
+function bk(){return (q.lvl>1||HI_DPR)?2:1;}
 // adaptive quality: if avg FPS<45 for ~2s, step down pixel ratio and bloom res
 function adapt(dt){q.fr++;q.acc+=dt;if(q.fr<120)return;q.fr=0;const avg=1000/(q.acc*16.67/120);q.acc=0;
-  if(avg<45&&q.lvl<2){q.lvl++;const pr=[PR_MAX,1.35,1][q.lvl];renderer.setPixelRatio(Math.min(devicePixelRatio,pr));composer.setSize(innerWidth,innerHeight);const k=q.lvl>1?2:1;bloom.resolution.set(innerWidth/k,innerHeight/k);bloom.setSize&&bloom.setSize(innerWidth/k,innerHeight/k);}}
+  if(avg<45&&q.lvl<3){q.lvl++;if(q.lvl===3){trail.forEach(s=>s.visible=false);parts.geometry.setDrawRange(0,200);return;}const pr=[PR_MAX,1.35,1][q.lvl];renderer.setPixelRatio(Math.min(devicePixelRatio,pr));composer.setSize(innerWidth,innerHeight);const k=bk();bloom.resolution.set(innerWidth/k,innerHeight/k);bloom.setSize&&bloom.setSize(innerWidth/k,innerHeight/k);}}
 function radTex(stops){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createRadialGradient(32,32,0,32,32,32);stops.forEach(s=>g.addColorStop(s[0],s[1]));x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
 function init(){
   scene=new THREE.Scene();
@@ -125,8 +128,8 @@ function init(){
   document.body.appendChild(renderer.domElement);
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),BLOOM_BASE,0.5,0.82);composer.setPixelRatio&&composer.setPixelRatio(renderer.getPixelRatio());
-  composer.addPass(bloom);
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth/bk(),innerHeight/bk()),BLOOM_BASE,0.5,0.82);composer.setPixelRatio&&composer.setPixelRatio(renderer.getPixelRatio());
+  composer.addPass(bloom);if(HI_DPR)bloom.setSize(innerWidth/2|0,innerHeight/2|0);
   // gradient sky dome
   sky=new THREE.Mesh(new THREE.SphereGeometry(80,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
     uniforms:{top:{value:new THREE.Color()},mid:{value:new THREE.Color()},bot:{value:new THREE.Color()},t:{value:0}},
@@ -147,7 +150,7 @@ function init(){
   scene.add(ring);
   // player orb
   const sm=new THREE.MeshPhysicalMaterial({color:0xffffff,emissive:0x3ff5ff,emissiveIntensity:0.12,metalness:0,roughness:0.04,transmission:0.92,ior:1.45,transparent:true,opacity:1,depthWrite:false,clearcoat:1,clearcoatRoughness:0.03,reflectivity:0.6});
-  sphere=new THREE.Mesh(new THREE.SphereGeometry(0.9,48,32),sm);sphere.position.y=0.9;scene.add(sphere);
+  sphere=new THREE.Mesh(new THREE.SphereGeometry(0.9,MOB?32:48,MOB?24:32),sm);sphere.position.y=0.9;scene.add(sphere);
   sphere.add(new THREE.Mesh(new THREE.SphereGeometry(0.12,16,12),new THREE.MeshBasicMaterial({color:0xffffff})));
   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0x9ff8ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0.25}));halo.scale.set(2.6,2.6,1);sphere.add(halo);SM=sm;HALO=halo;
   fil=new THREE.Group();sphere.add(fil);
@@ -156,9 +159,9 @@ function init(){
     const m=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts,true),100,0.016,4,true),new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(i/9,1,0.6),transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false}));
     m.rotation.set(Math.random()*3,Math.random()*3,0);m.userData.sp=(Math.random()-.5)*0.04;fil.add(m);}
   // trail (rainbow sprite pool)
-  for(let i=0;i<26;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:new THREE.Color().setHSL(i/26,1,0.6),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));s.scale.setScalar(1);scene.add(s);trail.push(s);}
+  const TN=MOB?16:26;for(let i=0;i<TN;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:new THREE.Color().setHSL(i/TN,1,0.6),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));s.scale.setScalar(1);scene.add(s);trail.push(s);}
   // sparkles (shared points)
-  const SN=300;const sg=new THREE.BufferGeometry();const sp=new Float32Array(SN*3),scl=new Float32Array(SN*3);sparkV=[];
+  const SN=MOB?150:300;const sg=new THREE.BufferGeometry();const sp=new Float32Array(SN*3),scl=new Float32Array(SN*3);sparkV=[];
   for(let i=0;i<SN;i++){sp[i*3+1]=-99;sparkV.push({v:new THREE.Vector3(),life:0});}
   sg.setAttribute('position',new THREE.BufferAttribute(sp,3));sg.setAttribute('color',new THREE.BufferAttribute(scl,3));
   spark=new THREE.Points(sg,new THREE.PointsMaterial({size:0.32,map:dotTex,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));spark.frustumCulled=false;scene.add(spark);spark.userData.i=0;
@@ -174,7 +177,7 @@ function init(){
   el.addEventListener('touchmove',e=>{e.preventDefault();setT(e.touches[0])},{passive:false});
   el.addEventListener('mousemove',e=>{if(e.buttons)setT(e)});el.addEventListener('mousedown',setT);
   function setT(t){if(bh.on){skipBH();return;}if(tilt.on)return;tx=((t.clientX/innerWidth)*2-1)*8;tz=((t.clientY/innerHeight)*2-1)*5.5;}
-  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);const k=q.lvl>1?2:1;bloom.setSize(innerWidth/k,innerHeight/k);});
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);const k=bk();bloom.setSize(innerWidth/k,innerHeight/k);});
   setZone(0);
   animate();
 }
@@ -285,7 +288,7 @@ function palette(A,B,k){const u=sky.material.uniforms;u.top.value.copy(mixHex(A.
 function stretchGrid(k){const p=gridH.geometry.attributes.position,a=p.array;
   for(let i=0;i<a.length;i+=3){const x=gridBase[i],z=gridBase[i+2],dx=BHP.x-x,dz=BHP.z-z,d=Math.sqrt(dx*dx+dz*dz),f=k*Math.exp(-d/7)*0.85;
     a[i]=x+dx*f;a[i+2]=z+dz*f;a[i+1]=-k*2.6*Math.exp(-d/4);}p.needsUpdate=true;}
-function world(v){[sky,floorMesh,gridH,ring,parts,spark,bhG].forEach(o=>o.visible=v);trail.forEach(s=>s.visible=v);crystals.forEach(c=>{if(!c.userData.ok)c.visible=v;});
+function world(v){[sky,floorMesh,gridH,ring,parts,spark,bhG].forEach(o=>o.visible=v);trail.forEach(s=>s.visible=v&&q.lvl<3);crystals.forEach(c=>{if(!c.userData.ok)c.visible=v;});
   sphere.material.visible=v;sphere.children[0].visible=v;sphere.children[1].visible=v;}
 // ---- audio ----
 function bhAudio(){const A=window._ac;if(!A)return null;try{A.resume&&A.resume();const t=A.currentTime,M=A.createGain();M.gain.setValueAtTime(0.0001,t);M.gain.exponentialRampToValueAtTime(0.9,t+0.8);M.connect(A.destination);
@@ -340,7 +343,7 @@ function updateBH(now,dt){const e=(now-bh.t0)/1000,U=bhPass.uniforms,A=ZONES[bh.
   stretchGrid(gk);if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
   _v.copy(BHP).project(camera);U.c.value.set(_v.x*.5+.5,_v.y*.5+.5);U.amt.value=amt;U.ca.value=ca;U.bright.value=br;}
 function endBH(){bh.on=false;bhPass.enabled=false;bhG.visible=false;appear=1;fil.scale.set(1,1,1);sphere.material.opacity=1;sphere.children[1].material.opacity=0.25;sphere.children[0].scale.setScalar(1);
-  stretchGrid(0);camera.fov=56;camera.updateProjectionMatrix();bloom.strength=BLOOM_BASE;if(bhLow){bhLow=false;const k=q.lvl>1?2:1;bloom.setSize(innerWidth/k|0,innerHeight/k|0);}mission(zone);}
+  stretchGrid(0);camera.fov=56;camera.updateProjectionMatrix();bloom.strength=BLOOM_BASE;if(bhLow){bhLow=false;const k=bk();bloom.setSize(innerWidth/k|0,innerHeight/k|0);}mission(zone);}
 </script>
 </body>
 </html>
