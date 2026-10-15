@@ -54,3 +54,10 @@ Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
 - Adaptive quality: new level 3 (after 1.35 → 1.0+half bloom) hides the trail and limits ambient motes to 200.
 - Already present / skipped: pixel ratio cap 1.75, levels 1–2, black hole quarter-res bloom fallback, flat-shaded crystals; lights already at 2 PointLights (no per-crystal lights exist). Skipped "full-res bloom during short effects" (reallocating render targets mid-effect causes stutter on iOS).
 - Verified headless 390×844 @3x: no game console errors (only 404 for /count.js + favicon on the local server, both exist only on stop60.no root).
+
+## 2026-10-15 — Hyperspace zone transition (note for Grok)
+- PR #8 (grok/hyperspace-tunnel, demo `hyperspace.html`) merged as-is.
+- index.html: black-hole transition extended 5.5 s → 6.7 s: 0–0.8 portal opens · 0.8–2.5 orb pulled in · 2.5–3.8 max distortion + palette shift · 3.8–4.0 silent black beat · **4.0–5.4 hyperspace** (streaks in next zone's palette `cr[0]`,`cr[1]`,`top`; accelerate to max in 0.4 s, FOV 74→104, bloom ↑, white flash at end, WebAudio whoosh) · 5.4–6.7 exit into new zone (FOV 104→56).
+- Streaks: one `THREE.LineSegments` + ShaderMaterial (additive, GPU-animated, no per-frame buffer upload), lazily created on first transition, visible only in the hyperspace phase. Count 560 desktop / 320 mobile, 260/180 when adaptive quality lvl≥2.
+- Tap-to-skip unchanged (jumps to 3.8 s, hyperspace still plays). Fix: zone switch is now guaranteed even if a frame hitch jumps past the exit phase.
+- Headless 390×844 check: no console errors (only local 404 for GoatCounter count.js). Shots: shots/hs_*.png.

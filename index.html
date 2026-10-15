@@ -104,7 +104,7 @@ const ZONES=[
  {name:'ZACHÓD LAWY',top:0xffd23f,mid:0xff5a1f,bot:0xc4106a,fog:0xb02a4a,floor:0x3a0820,grid:0xffb300,ring:0xffe600,cr:[0x7dff4f,0xffe600,0xff2a6a],light:[0xff7a00,0xffe600]},
  {name:'TOKSYCZNA DŻUNGLA',top:0x00ffc8,mid:0x20b04a,bot:0x0a3a7a,fog:0x0a6a5a,floor:0x04241e,grid:0x7dff4f,ring:0xff4fd8,cr:[0xff4fd8,0xffe600,0x3ff5ff],light:[0x7dff4f,0x00ffd0]}];
 let SM,HALO,HL,fx=[],fil,zone=0,sky,floorM,gridH,ring,L1,L2,trail=[],spark,sparkV,dotTex,glowTex,shell;
-let floorMesh,bh={on:false},bhG,bhPass,gridBase,appear=1,bhLow=false;
+let floorMesh,hs=null,bh={on:false},bhG,bhPass,gridBase,appear=1,bhLow=false;
 let scene,camera,renderer,composer,bloom,sphere,crystals=[],parts,score=0,total=0,tx=0,tz=0,shake=0;
 const PR_MAX=1.75,BLOOM_BASE=0.85;let q={lvl:0,fr:0,acc:0};
 // mobile profile (MOBILE_OPTIMIZATIONS.md): half-res bloom on dpr>2, shorter trail, fewer sparkles, lighter sphere
@@ -260,7 +260,7 @@ function animate(){
   sky.material.uniforms.t.value=T*0.001;
   composer.render();
 }
-// ===== Black hole portal (BLACK_HOLE_EFFECT.md): 5.5 s transition between sectors =====
+// ===== Black hole portal (BLACK_HOLE_EFFECT.md): 6.7 s transition between sectors (pull -> hyperspace -> exit) =====
 const BHP=new THREE.Vector3(0,1.5,-4.5);
 const BH_SHADER={uniforms:{tDiffuse:{value:null},c:{value:new THREE.Vector2(.5,.5)},asp:{value:1},amt:{value:0},ca:{value:0},bright:{value:1},t:{value:0}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -290,6 +290,23 @@ function stretchGrid(k){const p=gridH.geometry.attributes.position,a=p.array;
     a[i]=x+dx*f;a[i+2]=z+dz*f;a[i+1]=-k*2.6*Math.exp(-d/4);}p.needsUpdate=true;}
 function world(v){[sky,floorMesh,gridH,ring,parts,spark,bhG].forEach(o=>o.visible=v);trail.forEach(s=>s.visible=v&&q.lvl<3);crystals.forEach(c=>{if(!c.userData.ok)c.visible=v;});
   sphere.material.visible=v;sphere.children[0].visible=v;sphere.children[1].visible=v;}
+// ---- hyperspace streaks (from hyperspace.html, PR #8): one LineSegments draw call, lazily allocated, visible only during the transition ----
+function hsCount(){return q.lvl>=2?(MOB?180:260):(MOB?320:560);}
+function initHS(){const N=560,g=new THREE.BufferGeometry(),P=new Float32Array(N*6),S=new Float32Array(N*2*4);
+  for(let i=0;i<N;i++){const a=Math.random()*6.2832,r=0.6+Math.pow(Math.random(),0.7)*7,z=Math.random(),c=Math.random();
+    for(let k=0;k<2;k++){const j=i*2+k;P[j*3]=Math.cos(a)*r;P[j*3+1]=Math.sin(a)*r;P[j*3+2]=0;S[j*4]=z;S[j*4+1]=k;S[j*4+2]=c;S[j*4+3]=0.6+Math.random()*0.8;}}
+  g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('s',new THREE.BufferAttribute(S,4));
+  const m=new THREE.ShaderMaterial({uniforms:{t:{value:0},spd:{value:0},op:{value:0},c1:{value:new THREE.Color()},c2:{value:new THREE.Color()},c3:{value:new THREE.Color()}},
+   vertexShader:'attribute vec4 s;uniform float t,spd;uniform vec3 c1,c2,c3;varying vec3 vc;varying float va;void main(){float L=60.;float z=-L+mod(s.x*L+t*s.w,L);'+
+    'float tail=0.15+spd*7.*s.w;z-=s.y*tail;vec3 p=vec3(position.xy,z);vc=s.z<.33?c1:(s.z<.66?c2:c3);va=(1.-s.y*.85)*smoothstep(-L,-L*.6,z);'+
+    'gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',
+   fragmentShader:'uniform float op;varying vec3 vc;varying float va;void main(){gl_FragColor=vec4(vc*1.6*va*op,1.);}',
+   blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,depthTest:false,fog:false});
+  hs=new THREE.LineSegments(g,m);hs.frustumCulled=false;hs.renderOrder=999;hs.visible=false;hs.userData.d=0;scene.add(hs);}
+function whoosh(){const A=window._ac;if(!A)return;try{const t=A.currentTime,M=A.createGain();M.connect(A.destination);M.gain.setValueAtTime(0.0001,t);M.gain.exponentialRampToValueAtTime(0.5,t+0.45);M.gain.setValueAtTime(0.5,t+0.9);M.gain.exponentialRampToValueAtTime(0.0001,t+1.45);
+  const nb=A.createBuffer(1,A.sampleRate*1.5|0,A.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  const n=A.createBufferSource();n.buffer=nb;const bp=A.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.2;bp.frequency.setValueAtTime(250,t);bp.frequency.exponentialRampToValueAtTime(3800,t+0.9);bp.frequency.exponentialRampToValueAtTime(900,t+1.45);n.connect(bp).connect(M);n.start(t);n.stop(t+1.5);
+  const o=A.createOscillator(),G=A.createGain();o.type='sawtooth';o.frequency.setValueAtTime(55,t);o.frequency.exponentialRampToValueAtTime(220,t+1.0);G.gain.value=0.06;const lp=A.createBiquadFilter();lp.frequency.value=600;o.connect(lp).connect(G).connect(M);o.start(t);o.stop(t+1.5);}catch(e){}}
 // ---- audio ----
 function bhAudio(){const A=window._ac;if(!A)return null;try{A.resume&&A.resume();const t=A.currentTime,M=A.createGain();M.gain.setValueAtTime(0.0001,t);M.gain.exponentialRampToValueAtTime(0.9,t+0.8);M.connect(A.destination);
   const nodes=[];const lp=A.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(120,t);lp.frequency.exponentialRampToValueAtTime(420,t+3.8);lp.connect(M);
@@ -330,19 +347,24 @@ function updateBH(now,dt){const e=(now-bh.t0)/1000,U=bhPass.uniforms,A=ZONES[bh.
     bloom.strength=lerp(0.9,2.8,sm(p));gk=lerp(0.3,0.8,p);amt=0.6*p;fov=lerp(56,70,sm(p));bh.look.lerp(BHP,0.1);}
   else if(e<3.8){const q=(e-2.5)/1.3;sphere.position.copy(BHP);bh.spin=15+8*q;fil.scale.set(3.6+0.8*q,1.6,3.6+0.8*q);sphere.material.opacity=0;sphere.children[1].material.opacity=0;
     bloom.strength=2.8;gk=0.8+0.2*q;amt=0.6+0.4*q;ca=q;fov=70+4*q;br=1+0.16*Math.sin(e*Math.PI*2*2.5);palette(A,B,sm(q));bh.look.copy(BHP);}
-  else if(e<4.2){if(bh.ph<3){bh.ph=3;world(false);bhSilence();}// near-silence, almost black, only filaments
+  else if(e<4.0){if(bh.ph<3){bh.ph=3;world(false);bhSilence();}// near-silence, almost black, only filaments
     bloom.strength=0.35;gk=1;amt=0.7;ca=0.4;fov=74;br=1;bh.spin=10;}
-  else if(e<5.5){if(bh.ph<4){bh.ph=4;palette(A,B,1);setZone(bh.to);world(true);bhExitAudio(bh.to);tx=0;tz=1.5;bh.start=BHP.clone();}
-    const r=(e-4.2)/1.3,rs=sm(r);appear=rs;sphere.position.lerpVectors(bh.start,_v.set(0,0.9,1.5),rs);bh.spin=lerp(10,1,r);const fs=lerp(4.4,1,rs);fil.scale.set(fs,lerp(1.6,1,rs),fs);
+  else if(e<5.4){const h=(e-4.0)/1.4;// HYPERSPACE: streaks burst toward camera in the next zone's palette
+    if(bh.ph<3.5){bh.ph=3.5;if(!hs)initHS();hs.geometry.setDrawRange(0,hsCount()*2);const M=hs.material.uniforms;M.c1.value.setHex(B.cr[0]);M.c2.value.setHex(B.cr[1]);M.c3.value.setHex(B.top);hs.userData.d=0;hs.visible=true;whoosh();}
+    const acc=sm(cl(h/0.4)),M=hs.material.uniforms;hs.userData.d+=dt*0.016*(4+acc*140);M.t.value=hs.userData.d;M.spd.value=acc;M.op.value=cl(h/0.1)*(h>0.85?1-(h-0.85)/0.15*0.7:1);
+    hs.position.copy(camera.position);hs.quaternion.copy(camera.quaternion);
+    bloom.strength=lerp(0.6,1.8,acc);gk=0;amt=0.15*(1-acc);ca=0.3+0.5*acc;fov=lerp(74,104,sm(cl(h/0.6)));br=h>0.88?1+(h-0.88)*14:1;bh.spin=10;}
+  else if(e<6.7){if(bh.ph<4){bh.ph=4;if(hs)hs.visible=false;palette(A,B,1);setZone(bh.to);world(true);bhExitAudio(bh.to);tx=0;tz=1.5;bh.start=BHP.clone();}
+    const r=(e-5.4)/1.3,rs=sm(r);appear=rs;sphere.position.lerpVectors(bh.start,_v.set(0,0.9,1.5),rs);bh.spin=lerp(10,1,r);const fs=lerp(4.4,1,rs);fil.scale.set(fs,lerp(1.6,1,rs),fs);
     sphere.material.opacity=1*rs;sphere.children[1].material.opacity=0.25*rs;sphere.children[0].scale.setScalar(0.1+0.9*rs);
-    bloom.strength=lerp(0.35,0.9,rs);gk=1-rs;amt=0.7*(1-rs);ca=0.4*(1-rs);br=Math.pow(r,0.6);fov=lerp(74,56,rs);bs=1-rs;bh.look.lerp(_v.set(sphere.position.x,0.6,sphere.position.z),0.15);}
-  else{endBH();return;}
+    bloom.strength=lerp(0.35,0.9,rs);gk=1-rs;amt=0.7*(1-rs);ca=0.4*(1-rs);br=lerp(2.2,1,sm(cl(r*3)))*Math.max(Math.pow(r,0.4),0.35);fov=lerp(104,56,rs);bs=1-rs;bh.look.lerp(_v.set(sphere.position.x,0.6,sphere.position.z),0.15);}
+  else{if(bh.ph<4){palette(A,B,1);setZone(bh.to);world(true);tx=0;tz=1.5;}endBH();return;}// frame hitch safety: never skip the zone switch
   bhG.scale.setScalar(Math.max(bs,0.001));bhG.children[0].rotation.z+=0.02*dt;bhG.children[1].material.opacity=0.85+0.15*Math.sin(e*20);
   bhG.userData.arcs.forEach((m,i)=>{m.rotation.z+=m.userData.sp*0.03*dt*(1+amt*3);const c=i<3?A.cr[i]:0x9ff8ff;m.material.color.setHex(c);m.material.opacity=cl((e-0.6)/1.2)*0.9;m.scale.set(1+amt*0.35,1-amt*0.12,1);});
   trail.forEach((s,i)=>s.position.lerp(BHP,0.04*amt));
   stretchGrid(gk);if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
   _v.copy(BHP).project(camera);U.c.value.set(_v.x*.5+.5,_v.y*.5+.5);U.amt.value=amt;U.ca.value=ca;U.bright.value=br;}
-function endBH(){bh.on=false;bhPass.enabled=false;bhG.visible=false;appear=1;fil.scale.set(1,1,1);sphere.material.opacity=1;sphere.children[1].material.opacity=0.25;sphere.children[0].scale.setScalar(1);
+function endBH(){bh.on=false;if(hs)hs.visible=false;bhPass.enabled=false;bhG.visible=false;appear=1;fil.scale.set(1,1,1);sphere.material.opacity=1;sphere.children[1].material.opacity=0.25;sphere.children[0].scale.setScalar(1);
   stretchGrid(0);camera.fov=56;camera.updateProjectionMatrix();bloom.strength=BLOOM_BASE;if(bhLow){bhLow=false;const k=bk();bloom.setSize(innerWidth/k|0,innerHeight/k|0);}mission(zone);}
 </script>
 </body>
