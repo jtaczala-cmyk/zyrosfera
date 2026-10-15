@@ -19,6 +19,21 @@
 - Menu: gradientowe tło, tęczowy animowany tytuł, pulsujący przycisk; HUD w stylu mobilnym.
 - Wydajność: usunięte światła punktowe kryształów, pule cząsteczek, bloom w 1/2 rozdz., bez MSAA. Żyroskop/dotyk bez zmian, noindex bez zmian.
 
+## Grafika premium + fabuła (15.10.2026, Grok — gałąź grok/graphics-story)
+- Z PR grok/better-graphics przeniesione techniki (PR nie scalony: oparty na starym main, cofałby 3 strefy, żyroskop, GoatCounter i nazwę ŻyroSfera):
+  - kula gracza: MeshPhysicalMaterial z transmission 0.92 + clearcoat (jedyny obiekt z transmission), kolor/emisja wg strefy;
+  - ACES Filmic tone mapping, bloom w pełnej rozdzielczości (wyższy próg, mniej przepaleń);
+  - kinowe światło: ciepły key (DirectionalLight) + dwa kolorowe rim-lighty wg palety strefy, hemisphere w kolorach strefy;
+  - głębsza mgła FogExp2 w kolorze strefy, lustrzana metaliczna podłoga;
+  - mniej agresywnych neonów: siatka 0.16, pierścienie 0.3, ślad w kolorach strefy zamiast tęczy, mniejsze drobiny; kryształy jako szlachetne kamienie (MeshStandard, metal/roughness).
+  - Odrzucone z PR: nazwa Aetheris, usunięcie stref/żyroskopu/GoatCounter, PointLight na każdym krysztale (za drogie na iPhone), antialias MSAA.
+- Wydajność: pixel ratio max 1.75; adaptacyjna jakość — gdy średnio <45 FPS przez ~120 klatek: PR 1.35, potem PR 1.0 + bloom w 1/2 rozdz.
+- Fabuła z GDD (gałąź grok/gdd-fabuła): ekran prologu (Lumen, Drift, stacja Aetheris), karta misji przed każdą strefą, wydarzenie przy 3. fragmencie (nagranie załogi / „Drift się zbliża” / rośliny), „Fragment odzyskany” przy 7., ekran końcowy „Serce bije. Aetheris żyje.” Języki PL (domyślny) / EN / NO — przyciski w menu, zapamiętywane w localStorage.
+- Nazwa gry i URL bez zmian: ŻyroSfera, stop60.no/zyrosfera; „Aetheris” występuje tylko jako nazwa stacji w fabule.
+- Integracja z portalem czarnej dziury (main): karta misji pokazuje się po zakończeniu przejścia BH; endBH przywraca nowe wartości kuli (opacity 1, halo 0.25); adaptacja jakości wstrzymana w trakcie BH.
+- Test headless 390×844: brak błędów gry w konsoli (tylko 404 /count.js lokalnie). Zrzuty: shots/gs_*.png.
+- **Test na iPhonie 15 Pro: oczekuje na Jacka** (FPS, czy adaptacja nie obniża jakości bez potrzeby, transmission na kuli).
+
 ## Otwarte
 - Test na prawdziwym telefonie (wydajność, żyroskop na iOS).
 - Nazwa „ŻyroSfera” — nie znaleziono konfliktu znaków towarowych w kodzie/zasobach (brak cudzych assetów); formalnie niesprawdzone w rejestrze.
