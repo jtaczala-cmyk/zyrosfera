@@ -30,6 +30,7 @@
 - Wydajność: pixel ratio max 1.75; adaptacyjna jakość — gdy średnio <45 FPS przez ~120 klatek: PR 1.35, potem PR 1.0 + bloom w 1/2 rozdz.
 - Fabuła z GDD (gałąź grok/gdd-fabuła): ekran prologu (Lumen, Drift, stacja Aetheris), karta misji przed każdą strefą, wydarzenie przy 3. fragmencie (nagranie załogi / „Drift się zbliża” / rośliny), „Fragment odzyskany” przy 7., ekran końcowy „Serce bije. Aetheris żyje.” Języki PL (domyślny) / EN / NO — przyciski w menu, zapamiętywane w localStorage.
 - Nazwa gry i URL bez zmian: ŻyroSfera, stop60.no/zyrosfera; „Aetheris” występuje tylko jako nazwa stacji w fabule.
+- Integracja z portalem czarnej dziury (main): karta misji pokazuje się po zakończeniu przejścia BH; endBH przywraca nowe wartości kuli (opacity 1, halo 0.25); adaptacja jakości wstrzymana w trakcie BH.
 - Test headless 390×844: brak błędów gry w konsoli (tylko 404 /count.js lokalnie). Zrzuty: shots/gs_*.png.
 - **Test na iPhonie 15 Pro: oczekuje na Jacka** (FPS, czy adaptacja nie obniża jakości bez potrzeby, transmission na kuli).
 
@@ -39,3 +40,11 @@
 - Więcej poziomów / przeszkody wg GDD.
 
 Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
+
+## Czarna dziura — przejście między strefami (15.10.2026, dla Groka)
+- Zaimplementowane wg `BLACK_HOLE_EFFECT.md` w `index.html` (`startBH/updateBH`): 5,5 s po zebraniu 7/7 w strefie 1→2 i 2→3 (po strefie 3 nadal ekran wygranej).
+- 0–0,8 s pojawienie się (czarny dysk + niebiesko-biały pierścień akrecyjny, siatka zaczyna się zakrzywiać w lej); 0,8–2,5 Lumen wciągana, włókna rozciągają się i wirują szybciej, łuki światła (lensing), bloom 0,9→2,8; 2,5–3,8 maks. zniekształcenie (shader pełnoekranowy: wir/soczewka + aberracja chromatyczna i falowanie na brzegach), paleta przechodzi do następnej strefy, puls jasności; 3,8–4,2 cisza, prawie czarno, widać tylko włókna, bloom 0,35; 4,2–5,5 nowa strefa się rozjaśnia, kryształy wyrastają, bloom wraca do 0,9.
+- Dźwięk WebAudio: narastający drone sub-bass, wysokie krystaliczne tony z odstrojeniem, cichy szum próżni, 0,4 s ciszy, wejście akordu nowej strefy z pogłosem (Convolver).
+- Bez dodatkowych systemów cząsteczek; ShaderPass włączany tylko na czas przejścia; jeśli FPS spadnie w trakcie, bloom tymczasowo w 1/4 rozdz. Tap w trakcie (1–3,8 s) = pomiń do wyjścia.
+- Uwaga: GDD w PR #2 zmienia nazwę na „Aetheris/Lumen” — w grze nazwa/URL ŻyroSfera bez zmian (decyzja Jacka).
+- Zrzuty: `shots/live_bh_*.png`.
