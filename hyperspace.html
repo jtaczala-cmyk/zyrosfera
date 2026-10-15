@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hyperspace Tunnel</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden;touch-action:none;font-family:system-ui,sans-serif;color:#fff}
+  canvas{display:block}
+  #info{position:absolute;top:16px;left:16px;font-size:14px;opacity:0.8;pointer-events:none}
+  #start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:10}
+  button{padding:16px 40px;font-size:18px;background:#0af;color:#fff;border:none;border-radius:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="info">Prędkość nadświetlna</div>
+<div id="start"><button id="go">Wejdź w tunel</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const startBtn=document.getElementById('go');
+startBtn.onclick=()=>{document.getElementById('start').style.display='none';run()};
+function run(){
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,200);
+  camera.position.z=0;
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  document.body.appendChild(renderer.domElement);
+
+  const group=new THREE.Group();
+  scene.add(group);
+  const streaks=[];
+  const N=120;
+  for(let i=0;i<N;i++){
+    const len=40+Math.random()*80;
+    const geo=new THREE.CylinderGeometry(0.02,0.02,len,4);
+    const mat=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(0.55+Math.random()*0.15,1,0.7),transparent:true,opacity:0.8,blending:THREE.AdditiveBlending});
+    const m=new THREE.Mesh(geo,mat);
+    const angle=Math.random()*Math.PI*2;
+    const radius=2+Math.random()*8;
+    m.position.set(Math.cos(angle)*radius,Math.sin(angle)*radius,-Math.random()*200);
+    m.rotation.x=Math.PI/2;
+    m.userData={speed:8+Math.random()*12,angle,radius};
+    group.add(m);
+    streaks.push(m);
+  }
+
+  const core=new THREE.PointLight(0x88ffff,4,30);
+  scene.add(core);
+
+  let speed=1;
+  let t=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    t+=0.016;
+    speed=Math.min(40,speed+0.15);
+    streaks.forEach(s=>{
+      s.position.z+=s.userData.speed*speed*0.08;
+      if(s.position.z>10){
+        s.position.z=-180-Math.random()*40;
+        const a=Math.random()*Math.PI*2;
+        const r=1.5+Math.random()*7;
+        s.position.x=Math.cos(a)*r;
+        s.position.y=Math.sin(a)*r;
+      }
+      s.material.opacity=0.4+0.6*Math.min(1,speed/20);
+    });
+    camera.fov=70+Math.min(30,speed*0.4);
+    camera.updateProjectionMatrix();
+    renderer.render(scene,camera);
+  }
+  animate();
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+}
+</script>
+</body>
+</html>
