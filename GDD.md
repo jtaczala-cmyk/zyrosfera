@@ -1,50 +1,34 @@
 # Aetheris — GDD
 
-**Nazwa robocza:** Aetheris  
-**Poprzednia:** ŻyroSfera (odrzucona ze względu na bliskość do istniejącej gry GyroSphere Trials)
+**Nazwa:** Aetheris  
+**Bohater:** Lumen
 
-## Koncepcja
-Gra zręcznościowa, w której gracz steruje świecącą sferą energetyczną przez sektory rozpadającej się stacji kosmicznej. Sterowanie: dotyk (domyślne) lub żyroskop.
+## Przejście przez czarną dziurę
 
-## Fabuła
-Stacja *Aetheris* rozpada się po pęknięciu Serca Równowagi. Sfera musi zebrać fragmenty i dostarczyć je do centralnej komory, aby ustabilizować stację.
+Po ukończeniu sektora Lumen wlatuje w **czarną dziurę** — portal, który przenosi ją do następnego świata / wymiaru.
 
-## Cel gry
-Zebrać wszystkie fragmenty Serca Równowagi w danym sektorze i dotrzeć do wyjścia.
+### Jak to działa
+1. Gracz zbiera wszystkie fragmenty w sektorze.
+2. Pojawia się czarna dziura (horyzont zdarzeń, zakrzywione światło).
+3. Lumen wlatuje w nią — krótka sekwencja przejścia (3–5 sekund).
+4. Po drugiej stronie jest nowy sektor z inną paletą kolorów i atmosferą.
 
-## Mechanika
-- Ruch sfery przez przeciąganie palcem lub pochylanie telefonu
-- Zbieranie fragmentów (fioletowe kryształy)
-- Efekty przy zbieraniu (iskry, dźwięk, wibracja)
-- Strefy zmiennej grawitacji (planowane)
-- Przeszkody (planowane)
+### Uczta dla oczu i uszu
+- **Wizualnie:** zakrzywienie przestrzeni, światło rozciągnięte w pierścienie, filamenty sfery rozciągają się, bloom intensywnieje, kolory przechodzą z jednej palety w drugą.
+- **Dźwiękowo:** niski, narastający drone + wysokie harmoniczne, które się zlewają. Krótki impuls ciszy tuż przed wyjściem. Po wyjściu — nowy ambient sektora.
+- **Sterowanie:** w trakcie przejścia sfera jest przyciągana do centrum. Gracz może delikatnie korygować, ale nie zatrzymać.
 
-## System punktów (propozycja)
-- Fragment zebrany: +100
-- Czas ukończenia: bonus za szybkość
-- Precyzja (mało kolizji): dodatkowy mnożnik
+### Znaczenie fabularne
+Czarna dziura to nie tylko portal. To miejsce, gdzie Drift jest najsilniejszy. Każde przejście jest ryzykowne — jeśli Lumen za długo zostaje w horyzoncie, Drift zaczyna ją pochłaniać (wizualne zniekształcenie, spadek prędkości).
 
-## Poziomy
-1. Laboratorium Obserwacyjne — wprowadzenie, łatwe zbieranie
-2. Korytarz Przeciążeń — zmienna grawitacja
-3. Komora Strażników — przeszkody ruchome
-4. Ogród Hydroponiczny — węższe przejścia
-5. Echo Załogi — narracja, wspomnienia
-6. Centralna Komora — finał, wszystkie fragmenty
+### Technicznie (dla Stop60)
+- Krótka animacja / shader przejścia (nie pełny cutscene).
+- Zmiana tła, świateł i koloru kryształów po wyjściu.
+- Dźwięk generowany lub prosty sample (bez ciężkich assetów).
+- Wydajność: bloom może być mocniejszy tylko w trakcie przejścia.
 
-## Wow
-- Intensywny bloom i świecąca sfera z wewnętrznymi filamentami
-- Fioletowe kryształy z własnym światłem
-- Płynne sterowanie i satysfakcjonujący feedback przy zbieraniu
-
-## Wymagania techniczne
-- Mobile first (iOS / Android)
-- Touch + opcjonalny żyroskop
-- Three.js (aktualnie) / docelowo Unity lub Godot
-- Wydajność na iPhonie (bloom w połowie rozdzielczości)
-
-## Języki
-PL / EN / NO
+## Pozostałe elementy
+Pełna fabuła, dialogi PL/EN/NO i sektory są w PR z gałęzi `grok/gdd-fabuła`. Ten dokument uzupełnia je o mechanikę przejścia.
 
 ---
-Dokument roboczy. Do uzgodnienia z Jackiem.
+Do akceptacji przez Jacka.
