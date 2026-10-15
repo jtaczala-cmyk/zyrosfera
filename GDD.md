@@ -1,50 +1,53 @@
 # Aetheris — GDD
 
-**Nazwa robocza:** Aetheris  
-**Poprzednia:** ŻyroSfera (odrzucona ze względu na bliskość do istniejącej gry GyroSphere Trials)
+**Nazwa:** Aetheris  
+**Bohater:** Lumen
 
-## Koncepcja
-Gra zręcznościowa, w której gracz steruje świecącą sferą energetyczną przez sektory rozpadającej się stacji kosmicznej. Sterowanie: dotyk (domyślne) lub żyroskop.
+## Przejście przez czarną dziurę
 
-## Fabuła
-Stacja *Aetheris* rozpada się po pęknięciu Serca Równowagi. Sfera musi zebrać fragmenty i dostarczyć je do centralnej komory, aby ustabilizować stację.
+Po ukończeniu sektora Lumen wlatuje w **czarną dziurę** — portal, który przenosi ją do następnego świata / wymiaru. Samo przejście ma być uczta dla oczu i uszu.
 
-## Cel gry
-Zebrać wszystkie fragmenty Serca Równowagi w danym sektorze i dotrzeć do wyjścia.
+### Jak to działa
+1. Gracz zbiera wszystkie fragmenty w sektorze.
+2. Pojawia się czarna dziura (horyzont zdarzeń, zakrzywione światło).
+3. Lumen wlatuje w nią — sekwencja przejścia (4–6 sekund).
+4. Po drugiej stronie jest nowy sektor z inną paletą kolorów i atmosferą.
 
-## Mechanika
-- Ruch sfery przez przeciąganie palcem lub pochylanie telefonu
-- Zbieranie fragmentów (fioletowe kryształy)
-- Efekty przy zbieraniu (iskry, dźwięk, wibracja)
-- Strefy zmiennej grawitacji (planowane)
-- Przeszkody (planowane)
+### Efekty kosmiczne i nieziemskie wrażenia
 
-## System punktów (propozycja)
-- Fragment zebrany: +100
-- Czas ukończenia: bonus za szybkość
-- Precyzja (mało kolizji): dodatkowy mnożnik
+**Wizualne**
+- Przestrzeń zaczyna się zakrzywiać — siatka podłogi rozciąga się w stronę horyzontu.
+- Światło z kryształów i sfery rozciąga się w długie, świecące pierścienie (gravitational lensing).
+- Filamenty wewnątrz Lumen rozciągają się i zaczynają wirować szybciej.
+- Bloom intensywnieje do maksimum, potem na moment gaśnie tuż przed wyjściem.
+- Kolory przechodzą płynnie z palety aktualnego sektora w paletę następnego.
+- Na brzegach ekranu pojawiają się subtelne zniekształcenia i „przesunięcia” (jakby rzeczywistość się rozrywała).
+- Krótkie błyski odległych gwiazd i mgławic w tle, które znikają w horyzoncie.
 
-## Poziomy
-1. Laboratorium Obserwacyjne — wprowadzenie, łatwe zbieranie
-2. Korytarz Przeciążeń — zmienna grawitacja
-3. Komora Strażników — przeszkody ruchome
-4. Ogród Hydroponiczny — węższe przejścia
-5. Echo Załogi — narracja, wspomnienia
-6. Centralna Komora — finał, wszystkie fragmenty
+**Dźwiękowe**
+- Niski, narastający drone (sub-bass), który wibruje w słuchawkach / głośniku.
+- Wysokie, krystaliczne harmoniczne, które się zlewają i rozciągają.
+- Delikatny, niemal niesłyszalny szum „próżni”.
+- Tuż przed wyjściem — pół sekundy niemal całkowitej ciszy.
+- Po wyjściu — nowy ambient sektora wpada z lekkim echem.
 
-## Wow
-- Intensywny bloom i świecąca sfera z wewnętrznymi filamentami
-- Fioletowe kryształy z własnym światłem
-- Płynne sterowanie i satysfakcjonujący feedback przy zbieraniu
+**Odczucie**
+- Sfera jest mocno przyciągana do centrum. Gracz może delikatnie korygować, ale nie zatrzymać.
+- Lekka wibracja telefonu w trakcie wejścia (jeśli dostępna).
+- Krótki moment „bez ciężaru” tuż przed wyjściem.
 
-## Wymagania techniczne
-- Mobile first (iOS / Android)
-- Touch + opcjonalny żyroskop
-- Three.js (aktualnie) / docelowo Unity lub Godot
-- Wydajność na iPhonie (bloom w połowie rozdzielczości)
+### Znaczenie fabularne
+Czarna dziura to nie tylko portal. To miejsce, gdzie Drift jest najsilniejszy. Każde przejście jest ryzykowne — jeśli Lumen za długo zostaje w horyzoncie, Drift zaczyna ją pochłaniać (wizualne zniekształcenie, spadek prędkości, ciemniejsze kolory).
 
-## Języki
-PL / EN / NO
+### Technicznie (dla Stop60)
+- Krótka sekwencja shaderowa / post-process (nie pełny cutscene).
+- Mocniejszy bloom tylko w trakcie przejścia.
+- Zmiana tła, świateł i koloru kryształów po wyjściu.
+- Dźwięk generowany proceduralnie lub prosty sample.
+- Wydajność: efekt trwa krótko, więc można pozwolić sobie na więcej.
+
+## Pozostałe elementy
+Pełna fabuła, dialogi PL/EN/NO i sektory są w PR z gałęzi `grok/gdd-fabuła`. Ten dokument uzupełnia je o mechanikę przejścia.
 
 ---
-Dokument roboczy. Do uzgodnienia z Jackiem.
+Do akceptacji przez Jacka.
