@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="robots" content="noindex,nofollow">
-<title>Aetheris</title>
-<meta name="apple-mobile-web-app-title" content="Aetheris">
-<meta name="application-name" content="Aetheris">
+<title>Aspheris</title>
+<meta name="apple-mobile-web-app-title" content="Aspheris">
+<meta name="application-name" content="Aspheris">
 <meta name="theme-color" content="#12002a">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=3">
-<link rel="icon" href="favicon.ico?v=3" sizes="any">
-<link rel="manifest" href="manifest.webmanifest?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=4">
+<link rel="icon" href="favicon.ico?v=4" sizes="any">
+<link rel="manifest" href="manifest.webmanifest?v=4">
 <style>
   body{margin:0;background:#12002a;overflow:hidden;touch-action:none;font-family:system-ui,-apple-system,sans-serif;color:#fff}
   #hud{position:absolute;top:14px;left:14px;padding:10px 16px;border-radius:999px;font-size:15px;font-weight:800;z-index:10;pointer-events:none;background:linear-gradient(90deg,rgba(255,60,170,.55),rgba(120,60,255,.55));box-shadow:0 0 18px rgba(255,80,200,.6);border:2px solid rgba(255,255,255,.5);text-shadow:0 1px 4px #0006}
@@ -60,14 +60,14 @@
   <div class="orb" style="width:60px;height:60px;right:10%;top:22%;background:radial-gradient(#fff,#ffe600 40%,transparent 70%);animation-delay:-2s"></div>
   <div class="orb" style="width:120px;height:120px;left:60%;bottom:10%;background:radial-gradient(#fff,#7dff4f 40%,transparent 70%);animation-delay:-4s"></div>
   <div class="orb" style="width:70px;height:70px;left:12%;bottom:18%;background:radial-gradient(#fff,#ff4fd8 40%,transparent 70%);animation-delay:-1s"></div>
-  <h1>Aetheris</h1>
+  <h1>Aspheris</h1>
   <p id="hint" style="opacity:.85">Przeciągaj palcem</p>
   <button id="go">Start</button>
   <div id="langs"><button data-l="pl">PL</button><button data-l="en">EN</button><button data-l="no">NO</button></div>
 </div>
-<div id="splash" aria-label="Aetheris">
-  <div id="splashOrb"><img src="media/orb_poster.jpg?v=3" alt="" width="400" height="400"><video id="splashVid" muted playsinline webkit-playsinline autoplay loop preload="auto" disablepictureinpicture disableremoteplayback poster="media/orb_poster.jpg?v=3"><source src="media/orb_anim.mp4?v=3" type="video/mp4"><source src="media/orb_anim.webm?v=3" type="video/webm"></video></div>
-  <h1>Aetheris</h1>
+<div id="splash" aria-label="Aspheris">
+  <div id="splashOrb"><img src="media/orb_poster.jpg?v=4" alt="" width="400" height="400"><video id="splashVid" muted playsinline webkit-playsinline autoplay loop preload="auto" disablepictureinpicture disableremoteplayback poster="media/orb_poster.jpg?v=4"><source src="media/orb_anim.mp4?v=4" type="video/mp4"><source src="media/orb_anim.webm?v=4" type="video/webm"></video></div>
+  <h1>Aspheris</h1>
   <div id="splashHint">&nbsp;</div>
 </div>
 <script src="vendor/three.min.js"></script>
@@ -86,20 +86,20 @@ const sc=document.getElementById('sc');
 // Story (GDD: Lumen vs Drift). PL default, EN/NO from GDD dialogues.
 const TX={
  pl:{hint:'Przeciągaj palcem',tap:'Dotknij, aby kontynuować',start:'Start',next:'Dalej',go:'Leć!',frag:'Fragmenty',zone:'STREFA',again:'Jeszcze raz',time:'Czas',gyroOff:'Żyroskop: wył',gyroOn:'Żyroskop: wł',
-  pk:'PROLOG',pt:'Lumen. Obudź się. Stacja spada.',pb:['Serce Równowagi stacji Aetheris pękło. Załoga zniknęła.','Drift — chaotyczna anomalia z rozbitego Serca — rozrywa sektory i pożera fragmenty równowagi.','Jesteś Lumen, ostatnią działającą sferą energii. Zbierz fragmenty Serca w trzech strefach, zanim Drift pochłonie wszystko.'],
+  pk:'PROLOG',pt:'Lumen. Obudź się. Stacja spada.',pb:['Serce Równowagi stacji Aspheris pękło. Załoga zniknęła.','Drift — chaotyczna anomalia z rozbitego Serca — rozrywa sektory i pożera fragmenty równowagi.','Jesteś Lumen, ostatnią działającą sferą energii. Zbierz fragmenty Serca w trzech strefach, zanim Drift pochłonie wszystko.'],
   m:['Laguna chłodzenia wciąż świeci. Zbierz 7 fragmentów Serca.','Drift rozgrzał rdzeń do czerwoności. Zbierz 7 fragmentów, zanim lawa je pochłonie.','Ogród hydroponiczny zdziczał i zatruł powietrze. Ostatnie 7 fragmentów — potem Serce.'],
   ev:['„Lumen, jeśli to słyszysz…”','Drift się zbliża.','Rośliny otwierają ci drogę…'],got:'Fragment odzyskany.',
-  wh:'Serce bije. Aetheris żyje.',wb:'Lumen złożył Serce Równowagi. Drift cofa się w ciemność — na razie.'},
+  wh:'Serce bije. Aspheris żyje.',wb:'Lumen złożył Serce Równowagi. Drift cofa się w ciemność — na razie.'},
  en:{hint:'Drag with your finger',tap:'Tap to continue',start:'Start',next:'Next',go:'Fly!',frag:'Fragments',zone:'ZONE',again:'Play again',time:'Time',gyroOff:'Gyro: off',gyroOn:'Gyro: on',
-  pk:'PROLOGUE',pt:'Lumen. Wake up. The station is falling.',pb:['The Heart of Balance of station Aetheris has cracked. The crew is gone.','The Drift — a chaotic anomaly born from the broken Heart — tears the sectors apart and devours the fragments.','You are Lumen, the last working energy sphere. Collect the Heart fragments in three zones before the Drift consumes everything.'],
+  pk:'PROLOGUE',pt:'Lumen. Wake up. The station is falling.',pb:['The Heart of Balance of station Aspheris has cracked. The crew is gone.','The Drift — a chaotic anomaly born from the broken Heart — tears the sectors apart and devours the fragments.','You are Lumen, the last working energy sphere. Collect the Heart fragments in three zones before the Drift consumes everything.'],
   m:['The cooling lagoon still glows. Collect 7 Heart fragments.','The Drift has heated the core red-hot. Collect 7 fragments before the lava takes them.','The hydroponic garden has gone wild and toxic. The last 7 fragments — then the Heart.'],
   ev:['“Lumen, if you can hear this…”','The Drift is approaching.','The plants open a path for you…'],got:'Fragment recovered.',
-  wh:'The Heart beats. Aetheris lives.',wb:'Lumen has rebuilt the Heart of Balance. The Drift retreats into the dark — for now.'},
+  wh:'The Heart beats. Aspheris lives.',wb:'Lumen has rebuilt the Heart of Balance. The Drift retreats into the dark — for now.'},
  no:{hint:'Dra med fingeren',tap:'Trykk for å fortsette',start:'Start',next:'Videre',go:'Fly!',frag:'Fragmenter',zone:'SONE',again:'Spill igjen',time:'Tid',gyroOff:'Gyro: av',gyroOn:'Gyro: på',
-  pk:'PROLOG',pt:'Lumen. Våkn opp. Stasjonen faller.',pb:['Balansens hjerte på stasjonen Aetheris har sprukket. Mannskapet er borte.','Driften — en kaotisk anomali fra det knuste hjertet — river sektorene i stykker og sluker fragmentene.','Du er Lumen, den siste fungerende energisfæren. Samle hjertefragmentene i tre soner før Driften sluker alt.'],
+  pk:'PROLOG',pt:'Lumen. Våkn opp. Stasjonen faller.',pb:['Balansens hjerte på stasjonen Aspheris har sprukket. Mannskapet er borte.','Driften — en kaotisk anomali fra det knuste hjertet — river sektorene i stykker og sluker fragmentene.','Du er Lumen, den siste fungerende energisfæren. Samle hjertefragmentene i tre soner før Driften sluker alt.'],
   m:['Kjølelagunen lyser fortsatt. Samle 7 hjertefragmenter.','Driften har varmet kjernen rødglødende. Samle 7 fragmenter før lavaen tar dem.','Den hydroponiske hagen er blitt vill og giftig. De siste 7 fragmentene — så hjertet.'],
   ev:['«Lumen, hvis du hører dette…»','Driften nærmer seg.','Plantene åpner veien for deg…'],got:'Fragment gjenopprettet.',
-  wh:'Hjertet slår. Aetheris lever.',wb:'Lumen har satt sammen Balansens hjerte. Driften trekker seg tilbake i mørket — for nå.'}};
+  wh:'Hjertet slår. Aspheris lever.',wb:'Lumen har satt sammen Balansens hjerte. Driften trekker seg tilbake i mørket — for nå.'}};
 let LANG=(()=>{try{return localStorage.getItem('zs_lang')||'pl'}catch(e){return 'pl'}})(),paused=false;
 const $=id=>document.getElementById(id),L=()=>TX[LANG];
 function applyLang(){const t=L();document.documentElement.lang=LANG==='no'?'nb':LANG;$('hint').textContent=t.hint;$('splashHint').textContent=t.tap;$('go').textContent=t.start;$('again').textContent=t.again;$('wh').textContent=t.wh;

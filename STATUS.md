@@ -87,3 +87,9 @@ Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
 - Fallback: wideo jest niewidoczne dopóki nie wyemituje `playing` — jeśli autoplay zablokowany (np. tryb niskiego zużycia energii na iOS) lub plik nie wczyta się, widać statyczną kulę (bez ikony „play”).
 - Test headless Chrome 390×844 @3x, UA iPhone iOS 26: PL/EN/NO, auto-zamknięcie i tap, fallback z zablokowanym wideo, Start → prolog → gra. Brak błędów gry w konsoli (lokalnie tylko 404 `/count.js`). Zrzuty: `shots/orb_splash_*.png`, `shots/orb_icons_preview.png`.
 - iPhone: stary skrót na ekranie głównym trzeba usunąć i dodać ponownie (Udostępnij → Do ekranu początkowego), żeby pojawiła się nowa ikona.
+
+## 2026-10-17 — Zmiana nazwy: Aetheris → **Aspheris** (Grok)
+- Powód: „AETHERIS” już istnieje na Steamie. Sprawdzenie nazwy „Aspheris” (Steam, itch.io, App Store, Google Play, web, ślady znaków towarowych): brak gry ani aplikacji o tej nazwie — tylko niezwiązane użycia (profil użytkownika Steam, nick Discord, domena ENS aspheris.eth).
+- Gra nazywa się teraz **Aspheris** we wszystkich językach (PL/EN/NO): `<title>`, `apple-mobile-web-app-title`, `application-name`, manifest `name`/`short_name`, tytuł na splashu i w menu, prolog („stacja Aspheris”), ekran końcowy („Serce bije. Aspheris żyje.” / „The Heart beats. Aspheris lives.” / „Hjertet slår. Aspheris lever.”), GDD.md, README.md. Stacja w fabule też nazywa się Aspheris. Starsze wpisy powyżej zostawione bez zmian jako historia.
+- URL bez zmian: stop60.no/zyrosfera/ (ukryty, noindex). Cache-bust ikon/manifestu/postera: `?v=4`.
+- Test headless Chrome 390×844 PL/EN/NO: tytuł, splash, menu, prolog OK; brak błędów gry w konsoli (lokalnie tylko 404 `/count.js`). Zrzuty: `shots/aspheris_title.png` (+ `_en`, `_no`, `aspheris_splash.png`, `aspheris_prolog_*.png`).

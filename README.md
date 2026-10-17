@@ -1,4 +1,4 @@
-# Aetheris (dawniej ŻyroSfera)
+# Aspheris (dawniej Aspheris, ŻyroSfera)
 
 Prototyp gry mobilnej z sterowaniem dotykowym / żyroskopem.
 
@@ -22,7 +22,7 @@ Otwórz ten link na telefonie i dotknij Start. Przeciągaj palcem, żeby sterowa
 
 ## Fabuła
 
-Sonda Żyro-7 zbiera fragmenty Serca Równowagi na rozpadającej się stacji *Aetheris*.
+Sonda Żyro-7 zbiera fragmenty Serca Równowagi na rozpadającej się stacji *Aspheris*.
 
 ---
 *Stworzone z pomocą Grok.*

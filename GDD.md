@@ -1,6 +1,6 @@
-# Aetheris — GDD
+# Aspheris — GDD
 
-**Nazwa:** Aetheris
+**Nazwa:** Aspheris
 
 ## Bohater
 **Lumen** — ostatnia działająca sfera energetyczna stacji. Była częścią systemu utrzymującego równowagę. Po pęknięciu Serca została sama. Nie mówi słowami — komunikuje się przez światło i krótkie impulsy.
@@ -12,7 +12,7 @@
 Zebrać wszystkie fragmenty Serca Równowagi z pięciu sektorów i dostarczyć je do Centralnej Komory, zanim Drift pochłonie stację.
 
 ## Fabuła (krótko)
-Stacja Aetheris była miejscem eksperymentów z energią równowagi. Coś poszło nie tak — Serce pękło. Załoga zniknęła. Lumen budzi się w Laboratorium. Musi przejść przez kolejne sektory, zbierając fragmenty i uciekając przed rozprzestrzeniającym się Driftem. Na końcu, w Centralnej Komorze, musi zdecydować: naprawić Serce czy pozwolić stacji spaść, zabierając Drift ze sobą.
+Stacja Aspheris była miejscem eksperymentów z energią równowagi. Coś poszło nie tak — Serce pękło. Załoga zniknęła. Lumen budzi się w Laboratorium. Musi przejść przez kolejne sektory, zbierając fragmenty i uciekając przed rozprzestrzeniającym się Driftem. Na końcu, w Centralnej Komorze, musi zdecydować: naprawić Serce czy pozwolić stacji spaść, zabierając Drift ze sobą.
 
 ## Światy / sektory
 
@@ -62,9 +62,9 @@ Lumen dostarcza wszystkie fragmenty. Serce zaczyna się składać. Drift atakuje
 - NO: „Driften nærmer seg.”
 
 **Finał — sukces**
-- PL: „Serce bije. Aetheris żyje.”
-- EN: „The Heart beats. Aetheris lives.”
-- NO: „Hjertet slår. Aetheris lever.”
+- PL: „Serce bije. Aspheris żyje.”
+- EN: „The Heart beats. Aspheris lives.”
+- NO: „Hjertet slår. Aspheris lever.”
 
 **Finał — porażka**
 - PL: „Drift wygrał. Tym razem.”
