@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="Aetheris">
 <meta name="application-name" content="Aetheris">
 <meta name="theme-color" content="#12002a">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=2">
-<link rel="icon" href="favicon.ico?v=2" sizes="any">
-<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=3">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="manifest" href="manifest.webmanifest?v=3">
 <style>
   body{margin:0;background:#12002a;overflow:hidden;touch-action:none;font-family:system-ui,-apple-system,sans-serif;color:#fff}
   #hud{position:absolute;top:14px;left:14px;padding:10px 16px;border-radius:999px;font-size:15px;font-weight:800;z-index:10;pointer-events:none;background:linear-gradient(90deg,rgba(255,60,170,.55),rgba(120,60,255,.55));box-shadow:0 0 18px rgba(255,80,200,.6);border:2px solid rgba(255,255,255,.5);text-shadow:0 1px 4px #0006}
@@ -39,6 +39,14 @@
   #tiltBtn{position:absolute;top:14px;right:14px;z-index:10;padding:10px 14px;font-size:14px;font-weight:800;border-radius:999px;border:2px solid rgba(255,255,255,.6);background:linear-gradient(90deg,rgba(0,220,255,.55),rgba(60,120,255,.55));color:#fff;display:none;box-shadow:0 0 14px rgba(0,220,255,.6)}
   #toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font-size:40px;font-weight:900;color:#fff;text-shadow:0 0 12px #ff4fd8,0 0 30px #ffe600,0 3px 0 #7a0a6a;z-index:15;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s}
   #win{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20;background:radial-gradient(circle,rgba(255,80,200,.75),rgba(40,0,90,.92));text-align:center;font-weight:700}
+  #splash{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 42%,#14063a 0%,#040018 62%);transition:opacity .55s ease;-webkit-tap-highlight-color:transparent;cursor:pointer}
+  #splash.out{opacity:0;pointer-events:none}
+  #splashOrb{position:relative;width:min(72vw,46vh,380px);aspect-ratio:1;-webkit-mask-image:radial-gradient(circle,#000 58%,transparent 71%);mask-image:radial-gradient(circle,#000 58%,transparent 71%)}
+  #splashOrb img,#splashOrb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  #splashOrb video{opacity:0;transition:opacity .35s}
+  #splashOrb.playing video{opacity:1}
+  #splash h1{margin:6px 0 0;font-size:46px;font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#3ff5ff,#b98cff,#ff7ae6,#3ff5ff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(120,160,255,.85));animation:sh 4s linear infinite}
+  #splashHint{margin-top:14px;font-size:13px;letter-spacing:2px;opacity:.55;font-weight:700}
 </style>
 </head>
 <body>
@@ -57,6 +65,11 @@
   <button id="go">Start</button>
   <div id="langs"><button data-l="pl">PL</button><button data-l="en">EN</button><button data-l="no">NO</button></div>
 </div>
+<div id="splash" aria-label="Aetheris">
+  <div id="splashOrb"><img src="media/orb_poster.jpg?v=3" alt="" width="400" height="400"><video id="splashVid" muted playsinline webkit-playsinline autoplay loop preload="auto" disablepictureinpicture disableremoteplayback poster="media/orb_poster.jpg?v=3"><source src="media/orb_anim.mp4?v=3" type="video/mp4"><source src="media/orb_anim.webm?v=3" type="video/webm"></video></div>
+  <h1>Aetheris</h1>
+  <div id="splashHint">&nbsp;</div>
+</div>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/CopyShader.js"></script>
 <script src="vendor/LuminosityHighPassShader.js"></script>
@@ -72,29 +85,37 @@ window.goatcounter={path:location.pathname.replace(/index\.html$/,'')};
 const sc=document.getElementById('sc');
 // Story (GDD: Lumen vs Drift). PL default, EN/NO from GDD dialogues.
 const TX={
- pl:{hint:'Przeciągaj palcem',start:'Start',next:'Dalej',go:'Leć!',frag:'Fragmenty',zone:'STREFA',again:'Jeszcze raz',time:'Czas',gyroOff:'Żyroskop: wył',gyroOn:'Żyroskop: wł',
+ pl:{hint:'Przeciągaj palcem',tap:'Dotknij, aby kontynuować',start:'Start',next:'Dalej',go:'Leć!',frag:'Fragmenty',zone:'STREFA',again:'Jeszcze raz',time:'Czas',gyroOff:'Żyroskop: wył',gyroOn:'Żyroskop: wł',
   pk:'PROLOG',pt:'Lumen. Obudź się. Stacja spada.',pb:['Serce Równowagi stacji Aetheris pękło. Załoga zniknęła.','Drift — chaotyczna anomalia z rozbitego Serca — rozrywa sektory i pożera fragmenty równowagi.','Jesteś Lumen, ostatnią działającą sferą energii. Zbierz fragmenty Serca w trzech strefach, zanim Drift pochłonie wszystko.'],
   m:['Laguna chłodzenia wciąż świeci. Zbierz 7 fragmentów Serca.','Drift rozgrzał rdzeń do czerwoności. Zbierz 7 fragmentów, zanim lawa je pochłonie.','Ogród hydroponiczny zdziczał i zatruł powietrze. Ostatnie 7 fragmentów — potem Serce.'],
   ev:['„Lumen, jeśli to słyszysz…”','Drift się zbliża.','Rośliny otwierają ci drogę…'],got:'Fragment odzyskany.',
   wh:'Serce bije. Aetheris żyje.',wb:'Lumen złożył Serce Równowagi. Drift cofa się w ciemność — na razie.'},
- en:{hint:'Drag with your finger',start:'Start',next:'Next',go:'Fly!',frag:'Fragments',zone:'ZONE',again:'Play again',time:'Time',gyroOff:'Gyro: off',gyroOn:'Gyro: on',
+ en:{hint:'Drag with your finger',tap:'Tap to continue',start:'Start',next:'Next',go:'Fly!',frag:'Fragments',zone:'ZONE',again:'Play again',time:'Time',gyroOff:'Gyro: off',gyroOn:'Gyro: on',
   pk:'PROLOGUE',pt:'Lumen. Wake up. The station is falling.',pb:['The Heart of Balance of station Aetheris has cracked. The crew is gone.','The Drift — a chaotic anomaly born from the broken Heart — tears the sectors apart and devours the fragments.','You are Lumen, the last working energy sphere. Collect the Heart fragments in three zones before the Drift consumes everything.'],
   m:['The cooling lagoon still glows. Collect 7 Heart fragments.','The Drift has heated the core red-hot. Collect 7 fragments before the lava takes them.','The hydroponic garden has gone wild and toxic. The last 7 fragments — then the Heart.'],
   ev:['“Lumen, if you can hear this…”','The Drift is approaching.','The plants open a path for you…'],got:'Fragment recovered.',
   wh:'The Heart beats. Aetheris lives.',wb:'Lumen has rebuilt the Heart of Balance. The Drift retreats into the dark — for now.'},
- no:{hint:'Dra med fingeren',start:'Start',next:'Videre',go:'Fly!',frag:'Fragmenter',zone:'SONE',again:'Spill igjen',time:'Tid',gyroOff:'Gyro: av',gyroOn:'Gyro: på',
+ no:{hint:'Dra med fingeren',tap:'Trykk for å fortsette',start:'Start',next:'Videre',go:'Fly!',frag:'Fragmenter',zone:'SONE',again:'Spill igjen',time:'Tid',gyroOff:'Gyro: av',gyroOn:'Gyro: på',
   pk:'PROLOG',pt:'Lumen. Våkn opp. Stasjonen faller.',pb:['Balansens hjerte på stasjonen Aetheris har sprukket. Mannskapet er borte.','Driften — en kaotisk anomali fra det knuste hjertet — river sektorene i stykker og sluker fragmentene.','Du er Lumen, den siste fungerende energisfæren. Samle hjertefragmentene i tre soner før Driften sluker alt.'],
   m:['Kjølelagunen lyser fortsatt. Samle 7 hjertefragmenter.','Driften har varmet kjernen rødglødende. Samle 7 fragmenter før lavaen tar dem.','Den hydroponiske hagen er blitt vill og giftig. De siste 7 fragmentene — så hjertet.'],
   ev:['«Lumen, hvis du hører dette…»','Driften nærmer seg.','Plantene åpner veien for deg…'],got:'Fragment gjenopprettet.',
   wh:'Hjertet slår. Aetheris lever.',wb:'Lumen har satt sammen Balansens hjerte. Driften trekker seg tilbake i mørket — for nå.'}};
 let LANG=(()=>{try{return localStorage.getItem('zs_lang')||'pl'}catch(e){return 'pl'}})(),paused=false;
 const $=id=>document.getElementById(id),L=()=>TX[LANG];
-function applyLang(){const t=L();document.documentElement.lang=LANG==='no'?'nb':LANG;$('hint').textContent=t.hint;$('go').textContent=t.start;$('again').textContent=t.again;$('wh').textContent=t.wh;
+function applyLang(){const t=L();document.documentElement.lang=LANG==='no'?'nb':LANG;$('hint').textContent=t.hint;$('splashHint').textContent=t.tap;$('go').textContent=t.start;$('again').textContent=t.again;$('wh').textContent=t.wh;
   $('hud').childNodes[1].nodeValue=t.frag+': ';$('tiltBtn').textContent=tilt.on?t.gyroOn:t.gyroOff;
   document.querySelectorAll('#langs button').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));}
 document.querySelectorAll('#langs button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem('zs_lang',LANG)}catch(e){}applyLang();});
 function story(k,t,paras,btn,cb){$('sk').textContent=k;$('st').textContent=t;$('sb').innerHTML='';paras.forEach(x=>{const p=document.createElement('p');p.textContent=x;$('sb').appendChild(p);});
   $('sn').textContent=btn;$('story').style.display='flex';paused=true;$('sn').onclick=()=>{$('story').style.display='none';paused=false;cb&&cb();};}
+// Splash: animated orb (muted inline loop) for ~2.6 s or until tap; static poster if video can't play.
+(function(){const sp=$('splash'),v=$('splashVid'),box=$('splashOrb');let done=false;
+  function close(){if(done)return;done=true;sp.classList.add('out');setTimeout(()=>{sp.style.display='none';try{v.pause();v.removeAttribute('src');v.querySelectorAll('source').forEach(x=>x.remove());v.load();}catch(e){}},600);}
+  v.muted=true;v.defaultMuted=true;v.setAttribute('muted','');
+  v.addEventListener('playing',()=>box.classList.add('playing'));
+  v.addEventListener('error',()=>box.classList.remove('playing'),true);
+  try{const p=v.play();p&&p.catch&&p.catch(()=>box.classList.remove('playing'));}catch(e){}
+  sp.addEventListener('click',close);setTimeout(close,2600);})();
 $('go').onclick=()=>{$('overlay').style.display='none';const t=L();story(t.pk,t.pt,t.pb,t.next,()=>{t0=Date.now();try{const A=window._ac||(window._ac=new (window.AudioContext||window.webkitAudioContext)());A.resume&&A.resume();}catch(e){}init();});};
 let tilt={on:false,b:0,g:0,b0:null,g0:null},t0=0;
 const DEAD=3,FULL=25;function ax(v){const a=Math.abs(v);return a<DEAD?0:Math.sign(v)*Math.min(1,(a-DEAD)/(FULL-DEAD));}
