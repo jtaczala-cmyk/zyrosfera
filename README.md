@@ -1,4 +1,4 @@
-# ŻyroSfera
+# Aetheris (dawniej ŻyroSfera)
 
 Prototyp gry mobilnej z sterowaniem dotykowym / żyroskopem.
 

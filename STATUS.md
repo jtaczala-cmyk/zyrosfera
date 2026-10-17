@@ -74,3 +74,9 @@ Stop60 skończył — Grok może pracować na gałęzi i otwierać PR
 - Dźwięk (WebAudio, generowany): świst ładowania, thump przy skoku, ryk, boom przy wyjściu.
 - Tap‑to‑skip: w czarnej dziurze jak wcześniej; w nadświetlnej skacze do wyjścia (5.9 s).
 - Test headless 390×844 (zamrożony zegar): brak błędów gry, strefa 2 po przejściu; desktop 1280×800: 800 smug, skip OK. Zrzuty `shots/hs2_*.png`, wideo `shots/hs2_transition.mp4` (2.5–8.0 s przejścia).
+
+## 2026-10-17 — Nazwa „Aetheris” + ikona aplikacji (bóstwo)
+- Decyzja Jacka: gra nazywa się teraz **Aetheris** we wszystkich wersjach (PL/EN/NO): `<title>`, tytuł w menu, `apple-mobile-web-app-title`, `application-name`, manifest. Fabuła/ekran końcowy już używały „Aetheris”. URL bez zmian: stop60.no/zyrosfera/ (ukryty, noindex).
+- Nowa ikona: Strażniczka Aetheris — świetliste bóstwo z aureolą i promieniami, trzymające Serce Równowagi (szklana sfera z cyjanowo-fioletową energią i pierścieniem orbity). Generowana proceduralnie: `tools/make_icon.py` → `icons/icon-1024.png`.
+- Pliki: `apple-touch-icon.png` (180), `icons/icon-192.png`, `icons/icon-512.png`, `icons/icon-maskable-192/512.png`, `icons/favicon-32.png`, `favicon.ico`, `manifest.webmanifest` (nowy, display: browser). Linki z `?v=2` (cache-bust; brak service workera w projekcie).
+- Podgląd: `shots/icon_deity_preview.png`. Na iPhonie trzeba usunąć stary skrót z ekranu głównego i dodać ponownie.
